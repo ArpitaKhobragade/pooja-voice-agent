@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Sunrise Interiors — Request a Callback</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #fdf6ec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  .card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 380px;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 0.25rem; color: #3a2e1f; }
+  p.sub { color: #8a7a63; margin: 0 0 1.5rem; font-size: 0.9rem; }
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2d6c1;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+  }
+  button {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    background: #c9762b;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { background: #d8c3a5; cursor: default; }
+  #status { margin-top: 1rem; font-size: 0.9rem; text-align: center; min-height: 1.2em; }
+  #status.ok { color: #2f7d3c; }
+  #status.err { color: #b23b3b; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Interested in a new flat interior?</h1>
+    <p class="sub">Enter your number and we'll call you right away.</p>
+    <input id="phone" type="tel" placeholder="+91 98765 43210" />
+    <button id="submit">Call me now</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('submit');
+    const status = document.getElementById('status');
+    const phoneInput = document.getElementById('phone');
+
+    btn.addEventListener('click', async () => {
+      const phone_number = phoneInput.value.trim();
+      if (!phone_number) {
+        status.textContent = 'Please enter a phone number.';
+        status.className = 'err';
+        return;
+      }
+      btn.disabled = true;
+      status.className = '';
+      status.textContent = 'Calling you now — pick up in a few seconds...';
+
+      try {
+        const res = await fetch("/call", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone_number }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Something went wrong');
+        status.className = 'ok';
+        status.textContent = 'Call started! Your phone should be ringing.';
+      } catch (err) {
+        status.className = 'err';
+        status.textContent = 'Failed to start call: ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

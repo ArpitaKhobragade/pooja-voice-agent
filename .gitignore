@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+.env
+backend/logs/
+backend/*.db
+backend/*.log
+backend/diagnostics/
+# NOTE: backend/.tts_cache/ is intentionally committed. It holds Pooja's already-generated voice
+# lines, so a fresh deployment doesn't spend voice credits regenerating them.

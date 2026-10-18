@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pooja | HostelPGDekho voice agent</title>
+<meta name="description" content="Talk to Pooja, HostelPGDekho's calling assistant, and read the conversation as it happens.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground: #e9edf5;
+    --surface: #ffffff;
+    --ink: #101b3b;
+    --ink-soft: #4a5675;
+    --line: #d3dbea;
+    --pooja: #f2a31b;
+    --pooja-ink: #3b2500;
+    --owner: #101b3b;
+    --owner-ink: #f4f7ff;
+    --danger: #b3261e;
+    --ok: #18704f;
+    --focus: #2f5bea;
+    --radius: 14px;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0a1020;
+      --surface: #111a33;
+      --ink: #eaf0ff;
+      --ink-soft: #a5b1d1;
+      --line: #25314f;
+      --owner: #dfe8ff;
+      --owner-ink: #0d1530;
+      --pooja-ink: #2d1c00;
+      --danger: #ff8a80;
+      --ok: #5fd1a3;
+      --focus: #8fb0ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .shell { max-width: 1120px; margin: 0 auto; padding: 28px 20px 40px; min-height: 100%; display: flex; flex-direction: column; gap: 24px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { font: 700 1.35rem/1 var(--display); letter-spacing: -0.01em; }
+  .brand span { font-weight: 500; color: var(--ink-soft); }
+  .hint { color: var(--ink-soft); font-size: 0.9rem; margin: 0; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; flex: 1; min-height: 0; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+
+  /* ---- call panel ---- */
+  .call { padding: 28px 26px 24px; display: flex; flex-direction: column; gap: 20px; }
+  .call h1 { font: 700 clamp(1.9rem, 4vw, 2.7rem)/1.05 var(--display); letter-spacing: -0.02em; margin: 0; max-width: 14ch; }
+  .call p.lede { margin: 0; color: var(--ink-soft); max-width: 40ch; }
+
+  .voice { position: relative; height: 132px; border-radius: 12px; background: var(--ground); overflow: hidden; }
+  .voice canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .legend { display: flex; gap: 18px; font-size: 0.85rem; color: var(--ink-soft); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: baseline; }
+  .legend .l-owner i { background: var(--owner); }
+  .legend .l-pooja i { background: var(--pooja); }
+
+  .status { display: flex; align-items: center; gap: 10px; font-weight: 600; min-height: 1.6em; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+  .status[data-state="listening"] .dot { background: var(--ok); }
+  .status[data-state="thinking"] .dot { background: var(--ink-soft); }
+  .status[data-state="speaking"] .dot { background: var(--pooja); }
+  .status[data-state="connecting"] .dot { background: var(--ink-soft); }
+  .status[data-state="error"] .dot { background: var(--danger); }
+  .status[data-state="listening"] .dot, .status[data-state="speaking"] .dot { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.5); opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  button { font: 600 1rem var(--body); cursor: pointer; border-radius: 999px; border: 1px solid transparent; padding: 14px 28px; transition: transform .08s ease, background .15s ease; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .primary { background: var(--pooja); color: var(--pooja-ink); min-width: 170px; }
+  .primary:hover:not(:disabled) { background: #ffb53a; }
+  .primary.live, .primary.live:hover:not(:disabled) { background: #c9372c; color: #fff; }
+  .ghost { background: transparent; color: var(--ink); border-color: var(--line); padding: 9px 16px; font-weight: 500; font-size: .92rem; }
+  .ghost:hover:not(:disabled) { background: var(--ground); }
+
+  .code { display: none; flex-direction: column; gap: 6px; max-width: 280px; }
+  .code.show { display: flex; }
+  .code label { font-size: .9rem; font-weight: 600; }
+  .code input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+
+  .banner { display: none; border: 1px solid var(--line); border-left: 4px solid var(--danger); border-radius: 10px; padding: 12px 14px; font-size: .95rem; background: var(--surface); }
+  .banner.show { display: block; }
+  .banner.info { border-left-color: var(--ok); }
+
+  .fine { font-size: .85rem; color: var(--ink-soft); margin: 0; max-width: 46ch; }
+
+  /* ---- transcript ---- */
+  .transcript { display: flex; flex-direction: column; min-height: 460px; max-height: calc(100vh - 150px); }
+  @media (max-width: 860px) { .transcript { min-height: 360px; max-height: none; } }
+  .t-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .t-head h2 { font: 700 1.15rem var(--display); margin: 0; }
+  .t-tools { display: flex; gap: 8px; }
+  .log { list-style: none; margin: 0; padding: 18px 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { .log { scroll-behavior: auto; } }
+  .empty { margin: auto; text-align: center; color: var(--ink-soft); max-width: 30ch; }
+  .turn { max-width: 88%; display: flex; flex-direction: column; gap: 4px; }
+  .turn.pooja { align-self: flex-start; }
+  .turn.owner { align-self: flex-end; align-items: flex-end; }
+  .who { font-size: .82rem; color: var(--ink-soft); display: flex; gap: 8px; }
+  .who b { color: var(--ink); font-weight: 600; }
+  .bubble { margin: 0; padding: 11px 15px; border-radius: 16px; line-height: 1.45; max-width: 62ch; overflow-wrap: anywhere; }
+  .pooja .bubble { background: color-mix(in srgb, var(--pooja) 22%, var(--surface)); border-top-left-radius: 5px; }
+  .owner .bubble { background: var(--owner); color: var(--owner-ink); border-top-right-radius: 5px; }
+  .cut { font-size: .8rem; color: var(--ink-soft); font-style: italic; }
+  .note { align-self: center; font-size: .85rem; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
+  .note.good { color: var(--ok); }
+  .note.bad { color: var(--danger); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">Pooja <span>for HostelPGDekho</span></div>
+    <p class="hint">Works best in Chrome or Edge. Headphones give the cleanest conversation.</p>
+  </header>
+
+  <main class="grid">
+    <section class="panel call" aria-labelledby="title">
+      <div>
+        <h1 id="title">Talk to Pooja</h1>
+      </div>
+      <p class="lede">Pooja calls PG owners about HostelPGDekho. Press start, allow your microphone, and answer the way a PG owner would. You can interrupt her at any time.</p>
+
+      <div class="voice" aria-hidden="true"><canvas id="wave"></canvas></div>
+      <div class="legend" aria-hidden="true">
+        <span class="l-owner"><i></i>You</span>
+        <span class="l-pooja"><i></i>Pooja</span>
+      </div>
+
+      <div class="status" id="status" data-state="idle" role="status" aria-live="polite">
+        <span class="dot"></span><span id="statusText">Ready when you are</span>
+      </div>
+
+      <div class="banner" id="banner" role="alert"></div>
+
+      <div class="code" id="codeBox">
+        <label for="code">Access code</label>
+        <input id="code" type="password" autocomplete="off" placeholder="Enter the code you were given">
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="callBtn" type="button">Start call</button>
+      </div>
+
+      <p class="fine">Your voice is sent to speech-recognition and AI services so Pooja can reply. Nothing is recorded on this page; use Download to keep the transcript.</p>
+    </section>
+
+    <section class="panel transcript" aria-labelledby="tHead">
+      <div class="t-head">
+        <h2 id="tHead">Transcript</h2>
+        <div class="t-tools">
+          <button class="ghost" id="copyBtn" type="button" disabled>Copy</button>
+          <button class="ghost" id="saveBtn" type="button" disabled>Download</button>
+        </div>
+      </div>
+      <ol class="log" id="log" role="log" aria-live="polite" aria-label="Conversation transcript">
+        <li class="empty" id="empty">The conversation shows up here as you talk, with Pooja on the left and you on the right.</li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- elements ----------
+  const $ = (id) => document.getElementById(id);
+  const callBtn = $("callBtn"), statusEl = $("status"), statusText = $("statusText"), banner = $("banner");
+  const logEl = $("log"), emptyEl = $("empty"), copyBtn = $("copyBtn"), saveBtn = $("saveBtn");
+  const codeBox = $("codeBox"), codeInput = $("code"), canvas = $("wave");
+
+  // ---------- state ----------
+  let ws = null, ctx = null, micStream = null, workletNode = null, playGain = null, analyser = null;
+  let phase = "idle";            // idle | connecting | live | ending
+  let callStarted = false;       // true once the server says "ready" for this call
+  let playhead = 0, sources = new Set();
+  let micLevel = 0, poojaLevel = 0, shownOwner = 0, shownPooja = 0;
+  let turns = new Map();         // "speaker:turn" -> {li, p}
+  let lines = [];                // plain transcript for copy / download
+  let config = { requires_code: false, ready: true, missing: [] };
+  let startedAt = 0;
+
+  const SAMPLE_RATE = 16000, CHUNK = 512;
+
+  // ---------- helpers ----------
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  function setStatus(state, text) { statusEl.dataset.state = state; statusText.textContent = text; }
+  function showBanner(text, info) { banner.textContent = text; banner.classList.toggle("info", !!info); banner.classList.add("show"); }
+  function hideBanner() { banner.classList.remove("show"); }
+
+  function addNote(text, kind) {
+    emptyEl.remove();
+    const li = document.createElement("li");
+    li.className = "note " + (kind || "");
+    li.textContent = text;
+    logEl.appendChild(li);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function addLine(speaker, turn, text, t) {
+    emptyEl.remove();
+    const key = speaker + ":" + turn;
+    let entry = turns.get(key);
+    if (!entry) {
+      const li = document.createElement("li");
+      li.className = "turn " + speaker;
+      const who = document.createElement("div");
+      who.className = "who";
+      who.innerHTML = `<b>${speaker === "pooja" ? "Pooja" : "You"}</b><time>${mmss(t || 0)}</time>`;
+      const p = document.createElement("p");
+      p.className = "bubble";
+      li.append(who, p);
+      logEl.appendChild(li);
+      entry = { li, p, text: "" };
+      turns.set(key, entry);
+      lines.push({ t: t || 0, who: speaker === "pooja" ? "Pooja" : "Owner", entry });
+    }
+    entry.text = entry.text ? entry.text + " " + text : text;
+    entry.p.textContent = entry.text;
+    logEl.scrollTop = logEl.scrollHeight;
+    copyBtn.disabled = saveBtn.disabled = false;
+  }
+
+  function transcriptText() {
+    const head = `Pooja (HostelPGDekho) call transcript, ${new Date().toLocaleString()}\n`;
+    return head + "\n" + lines.map((l) => `[${mmss(l.t)}] ${l.who}: ${l.entry.text}${l.entry.cut ? " (interrupted)" : ""}`).join("\n") + "\n";
+  }
+
+  copyBtn.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(transcriptText()); copyBtn.textContent = "Copied"; }
+    catch { copyBtn.textContent = "Could not copy"; }
+    setTimeout(() => (copyBtn.textContent = "Copy"), 1600);
+  });
+  saveBtn.addEventListener("click", () => {
+    const blob = new Blob([transcriptText()], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "pooja-call-transcript.txt";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  });
+
+  // ---------- audio capture (browser echo cancellation is what lets you interrupt without headphones) ----------
+  const WORKLET = `
+    class Capture extends AudioWorkletProcessor {
+      constructor() { super(); this.buf = new Int16Array(${CHUNK}); this.n = 0; }
+      process(inputs) {
+        const ch = inputs[0] && inputs[0][0];
+        if (!ch) return true;
+        for (let i = 0; i < ch.length; i++) {
+          const s = Math.max(-1, Math.min(1, ch[i]));
+          this.buf[this.n++] = s < 0 ? s * 32768 : s * 32767;
+          if (this.n === ${CHUNK}) { const out = this.buf.slice(); this.port.postMessage(out.buffer, [out.buffer]); this.n = 0; }
+        }
+        return true;
+      }
+    }
+    registerProcessor("capture", Capture);`;
+
+  function onMicChunk(buffer) {
+    const pcm = new Int16Array(buffer);
+    let sum = 0;
+    for (let i = 0; i < pcm.length; i++) sum += pcm[i] * pcm[i];
+    micLevel = Math.min(1, Math.sqrt(sum / pcm.length) / 6000);
+    if (ws && ws.readyState === WebSocket.OPEN && (phase === "connecting" || phase === "live")) ws.send(buffer);
+  }
+
+  // ---------- playback of Pooja's voice ----------
+  function playChunk(buffer) {
+    if (!ctx) return;
+    const pcm = new Int16Array(buffer);
+    const buf = ctx.createBuffer(1, pcm.length, SAMPLE_RATE);
+    const f = buf.getChannelData(0);
+    for (let i = 0; i < pcm.length; i++) f[i] = pcm[i] / 32768;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(playGain);
+    playhead = Math.max(playhead, ctx.currentTime + 0.04);
+    src.start(playhead);
+    playhead += buf.duration;
+    sources.add(src);
+    src.onended = () => sources.delete(src);
+  }
+  function clearPlayback() {
+    sources.forEach((s) => { try { s.stop(); } catch {} });
+    sources.clear();
+    playhead = 0;
+  }
+
+  // ---------- the voice line ----------
+  const g = canvas.getContext("2d");
+  const BARS = 56;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function fitCanvas() {
+    const r = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    canvas.width = Math.round(r.width * d); canvas.height = Math.round(r.height * d);
+    g.setTransform(d, 0, 0, d, 0, 0);
+  }
+  window.addEventListener("resize", fitCanvas);
+
+  let frame = 0;
+  function draw(now) {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (analyser) {
+      const data = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+      poojaLevel = Math.min(1, Math.sqrt(sum / data.length) * 3.2);
+    }
+    shownOwner += (micLevel - shownOwner) * 0.25;
+    shownPooja += (poojaLevel - shownPooja) * 0.25;
+    micLevel *= 0.9;
+
+    g.clearRect(0, 0, w, h);
+    const owner = shownOwner > shownPooja;
+    const level = reduceMotion ? 0.15 : Math.max(shownOwner, shownPooja);
+    g.fillStyle = owner ? css("--owner") : css("--pooja");
+    const gap = w / BARS, bw = Math.max(2, gap * 0.52);
+    for (let i = 0; i < BARS; i++) {
+      const x = i * gap + (gap - bw) / 2;
+      const wobble = reduceMotion ? 0.5 : 0.45 + 0.55 * Math.abs(Math.sin(now / 240 + i * 0.7) * Math.cos(now / 410 + i * 0.31));
+      const edge = 1 - Math.pow(Math.abs(i - BARS / 2) / (BARS / 2), 1.6) * 0.75;
+      const bh = Math.max(3, level * wobble * edge * (h - 18));
+      g.beginPath();
+      g.roundRect ? g.roundRect(x, (h - bh) / 2, bw, bh, bw / 2) : g.rect(x, (h - bh) / 2, bw, bh);
+      g.fill();
+    }
+  }
+
+  // ---------- the call ----------
+  function wsUrl() {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    const code = config.requires_code ? "?code=" + encodeURIComponent(codeInput.value.trim()) : "";
+    return `${proto}://${location.host}/ws${code}`;
+  }
+
+  function micMessage(e) {
+    if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) return "Microphone access is blocked. Allow it from the address bar, then press Start call again.";
+    if (e && e.name === "NotFoundError") return "No microphone was found. Connect one and try again.";
+    return "The microphone could not be opened: " + (e && e.message ? e.message : "unknown error");
+  }
+
+  async function startCall() {
+    if (phase !== "idle") return;
+    hideBanner();
+    if (config.requires_code && !codeInput.value.trim()) { showBanner("Enter the access code first."); codeInput.focus(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { showBanner("This browser can't use the microphone on this page. Open it in Chrome or Edge over https."); return; }
+    phase = "connecting"; callStarted = false; render(); setStatus("connecting", "Connecting");
+    sessionStorage.setItem("pooja-code", codeInput.value.trim());
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+      });
+    } catch (e) { showBanner(micMessage(e)); return resetToIdle("error", "Microphone not available"); }
+
+    try {
+      ctx = new AudioContext({ sampleRate: SAMPLE_RATE });
+      await ctx.resume();
+      if (Math.abs(ctx.sampleRate - SAMPLE_RATE) > 1) throw new Error("This browser can't run audio at 16 kHz");
+      await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: "application/javascript" })));
+      const src = ctx.createMediaStreamSource(micStream);
+      workletNode = new AudioWorkletNode(ctx, "capture");
+      workletNode.port.onmessage = (ev) => onMicChunk(ev.data);
+      src.connect(workletNode);
+      playGain = ctx.createGain();
+      analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
+      playGain.connect(analyser); analyser.connect(ctx.destination);
+    } catch (e) { showBanner("Audio setup failed: " + e.message + ". Try Chrome or Edge."); return resetToIdle("error", "Audio setup failed"); }
+
+    startedAt = Date.now();
+    ws = new WebSocket(wsUrl());
+    ws.binaryType = "arraybuffer";
+    ws.onopen = () => ws.send(JSON.stringify({ type: "start" }));
+    ws.onmessage = (ev) => (typeof ev.data === "string" ? onEvent(JSON.parse(ev.data)) : playChunk(ev.data));
+    ws.onerror = () => { if (phase !== "idle") showBanner("Could not reach the server. Check your connection and try again."); };
+    ws.onclose = () => {
+      if (phase !== "connecting" && phase !== "live") return;
+      // Refused before the call began (wrong code, busy, missing settings): the banner already says why.
+      if (!callStarted) return resetToIdle("error", "Couldn't start the call");
+      finish("The connection closed.", "bad");
+    };
+  }
+
+  function onEvent(m) {
+    switch (m.type) {
+      case "ready": callStarted = true; phase = "live"; render(); setStatus("listening", "Listening"); if (!lines.length) addNote("Call started", ""); break;
+      case "status": {
+        if (phase !== "live") break;
+        const map = { listening: "Listening", thinking: "Thinking", speaking: "Pooja is speaking" };
+        setStatus(m.state, map[m.state] || m.state); break;
+      }
+      case "transcript": addLine(m.speaker, m.turn, m.text, m.t); break;
+      case "interrupted": { const e = turns.get("pooja:" + m.turn); if (e) { e.cut = true; const c = document.createElement("span"); c.className = "cut"; c.textContent = "interrupted"; e.li.querySelector(".who").appendChild(c); } break; }
+      case "clear": clearPlayback(); break;
+      case "notice": addNote(m.message, ""); break;
+      case "error": showBanner(m.message); break;
+      case "ended": finishFromServer(m); break;
+    }
+  }
+
+  const OUTCOME = { interested: ["Owner is interested", "good"], not_interested: ["Owner is not interested", "bad"], callback_or_busy: ["Owner asked for a call back", ""], none: ["", ""] };
+  const REASON = { time_limit: "The call reached its time limit.", stopped: "", disconnected: "" };
+
+  function finishFromServer(m) {
+    const [outcome, kind] = OUTCOME[m.outcome] || ["", ""];
+    const bits = ["Call ended" + (m.seconds ? ` after ${mmss(m.seconds)}` : "")];
+    if (REASON[m.reason]) bits.push(REASON[m.reason]);
+    if (outcome) bits.push(outcome);
+    finish(bits.join(". "), kind);
+  }
+
+  function finish(message, kind) {
+    if (phase === "idle") return;
+    addNote(message, kind);
+    resetToIdle("idle", "Call ended. Start a new call any time.");
+  }
+
+  function endCall() {
+    if (phase === "idle" || phase === "ending") return;
+    phase = "ending"; render();
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "stop" }));
+    clearPlayback();
+    // the server answers with "ended"; if it doesn't, wrap up ourselves
+    setTimeout(() => { if (phase === "ending") finish("Call ended.", ""); }, 2500);
+  }
+
+  function resetToIdle(state, text) {
+    phase = "idle";
+    try { ws && (ws.onclose = null, ws.close()); } catch {}
+    ws = null;
+    clearPlayback();
+    if (workletNode) { try { workletNode.disconnect(); } catch {} workletNode = null; }
+    if (micStream) { micStream.getTracks().forEach((t) => t.stop()); micStream = null; }
+    if (ctx) { try { ctx.close(); } catch {} ctx = null; analyser = null; playGain = null; }
+    micLevel = poojaLevel = 0;
+    render(); setStatus(state, text);
+  }
+
+  function render() {
+    callBtn.classList.toggle("live", phase === "live" || phase === "ending");
+    callBtn.disabled = phase === "connecting" || phase === "ending";
+    callBtn.textContent = { idle: lines.length ? "Start new call" : "Start call", connecting: "Connecting", live: "End call", ending: "Ending" }[phase];
+  }
+
+  callBtn.addEventListener("click", () => {
+    if (phase === "idle") {
+      // a new call starts with a clean transcript
+      if (lines.length) { turns = new Map(); lines = []; logEl.innerHTML = ""; copyBtn.disabled = saveBtn.disabled = true; }
+      startCall();
+    } else if (phase === "live") endCall();
+  });
+
+  // ---------- boot ----------
+  // A plain 25 fps timer (not requestAnimationFrame) so the voice line also runs in embedded or background views.
+  fitCanvas(); setInterval(() => draw(performance.now()), 40); render();
+  codeInput.value = sessionStorage.getItem("pooja-code") || "";
+  fetch("/api/config").then((r) => r.json()).then((c) => {
+    config = c;
+    codeBox.classList.toggle("show", !!c.requires_code);
+    if (!c.ready) showBanner("The server is missing settings, so calls can't start yet: " + c.missing.join(", "));
+  }).catch(() => {});
+  window.addEventListener("pagehide", () => { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "stop" })); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Render "Blueprint": New + > Blueprint, pick this repository, then paste the keys when asked.
+# Secrets are never stored in this file (sync: false means "ask me in the dashboard").
+services:
+  - type: web
+    name: pooja-voice-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free            # sleeps after ~15 min idle (first visit then takes ~1 min); use "starter" to keep it awake
+    healthCheckPath: /healthz
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: CARTESIA_API_KEY
+        sync: false
+      - key: CARTESIA_VOICE_ID
+        sync: false
+      - key: POOJA_ACCESS_CODE   # the code you give Sir together with the link
+        sync: false
+      - key: POOJA_VAD_BACKEND
+        value: webrtcvad
+      - key: POOJA_TIMEZONE
+        value: Asia/Kolkata
+      - key: POOJA_MAX_CALLS
+        value: "2"
+      - key: POOJA_WEB_MAX_CALL_S
+        value: "420"
+      - key: POOJA_SILENCE_TIMEOUT_S
+        value: "0.65"
+      - key: POOJA_PRE_SPEECH_TIMEOUT_S
+        value: "6.0"

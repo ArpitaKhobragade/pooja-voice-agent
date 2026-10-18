@@ -1,0 +1,52 @@
+# Pooja — local HostelPGDekho.com voice agent.
+# This is the ONLY requirements file needed to run pooja_cli.py in any
+# mode (voice / text / offline). The legacy Twilio/Pipecat telephony demo
+# (main.py) has its own separate requirements-legacy-twilio.txt — it is
+# not used by Pooja and not required by this project.
+
+# Core (needed for every mode, including --mode offline)
+python-dotenv
+loguru
+
+# --mode text and --mode voice (LLM conversation via Groq)
+groq
+
+# --mode voice only: microphone capture, speaker playback, VAD, STT/TTS
+# REST calls. These can be skipped entirely if you only plan to run
+# --mode text or --mode offline.
+sounddevice
+numpy
+# Plain "webrtcvad" needs a C++ compiler to build on Windows (MSVC Build
+# Tools), which most machines won't have installed. webrtcvad-wheels is
+# the same library with prebuilt Windows wheels, importable the same way
+# (`import webrtcvad`). If this still fails to install, Pooja falls back
+# to a simple energy-threshold VAD automatically (see local/audio_io.py).
+webrtcvad-wheels; sys_platform == "win32"
+webrtcvad; sys_platform != "win32"
+
+# --mode voice only: Sarvam STT (plain REST, no SDK needed) and the
+# OFFICIAL Cartesia SDK for TTS (mandatory by default — see README and
+# local/tts_cartesia.py for why it's not a silent fallback-first design).
+requests
+cartesia
+
+# --mode voice: explicit offline/fallback TTS. NOT used unless you pass
+# --tts-engine pyttsx3 or --allow-tts-fallback — see README.
+pyttsx3
+
+# --audition-voices-web only: the local-only browser page for comparing
+# Cartesia voices with real Play/Pause/Restart controls. Not needed for
+# --mode voice/text/offline or the terminal --audition-voices tool.
+fastapi
+uvicorn[standard]
+
+# Testing (httpx is FastAPI's own TestClient dependency)
+pytest
+httpx
+
+# OPTIONAL, not installed by default: Silero VAD, used automatically if
+# present (see local/audio_io.py's backend priority: silero > webrtcvad >
+# energy-threshold). Left out of the default install because it pulls in
+# PyTorch (hundreds of MB) — a real cost/size trade-off, not an oversight.
+# If you want to try it:
+#   pip install silero-vad torch --index-url https://download.pytorch.org/whl/cpu

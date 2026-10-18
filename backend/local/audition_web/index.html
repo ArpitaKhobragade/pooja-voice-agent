@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Choose Pooja's Voice</title>
+<style>
+  :root {
+    --bg: #f6f3ef;
+    --card-bg: #ffffff;
+    --ink: #2a2420;
+    --muted: #7a7169;
+    --accent: #b5542a;
+    --accent-dark: #93421f;
+    --border: #e4ddd3;
+    --ok: #2f7a3d;
+    --err: #b4382b;
+    --selected-ring: #b5542a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  header {
+    padding: 28px 24px 8px;
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.9rem;
+    margin: 0 0 6px;
+  }
+  .subtitle {
+    color: var(--muted);
+    margin: 0 0 4px;
+    max-width: 68ch;
+    line-height: 1.5;
+  }
+  .sample-text {
+    font-style: italic;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 12px 0 4px;
+    max-width: 68ch;
+  }
+  .banner {
+    max-width: 1040px;
+    margin: 10px auto 0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+  }
+  .banner.warn { background: #fdf0e3; border: 1px solid #e9c89a; color: #7a4a10; }
+  .banner.error { background: #fbe7e4; border: 1px solid #f0bdb4; color: var(--err); }
+
+  main {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 18px 24px 120px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .card.selected {
+    border-color: var(--selected-ring);
+    box-shadow: 0 0 0 3px rgba(181, 84, 42, 0.15);
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .voice-name { font-size: 1.15rem; font-weight: 600; margin: 0; }
+  .voice-tagline { color: var(--muted); font-size: 0.88rem; margin: 2px 0 0; min-height: 1.1em; }
+  .selected-chip {
+    display: none;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #fff;
+    background: var(--accent);
+    border-radius: 999px;
+    padding: 3px 9px;
+    white-space: nowrap;
+  }
+  .card.selected .selected-chip { display: inline-block; }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    color: var(--ink);
+  }
+  button:hover:not(:disabled) { background: #f2ece4; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent-dark); }
+  button.select-btn.is-selected {
+    background: var(--ok);
+    border-color: var(--ok);
+    color: #fff;
+  }
+
+  progress {
+    width: 100%;
+    height: 6px;
+    accent-color: var(--accent);
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .status-row .status.error { color: var(--err); }
+  .status-row .status.playing { color: var(--ok); }
+
+  footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  footer .current {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  footer .current strong { color: var(--ink); }
+  #saveMsg { font-size: 0.88rem; }
+  #saveMsg.ok { color: var(--ok); }
+  #saveMsg.err { color: var(--err); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Choose Pooja's Voice</h1>
+  <p class="subtitle">
+    Click <strong>Play</strong> on any voice to hear the same sample line Pooja uses to open a
+    real call. Compare as many as you like, in any order — <strong>Pause</strong> keeps your
+    place, <strong>Restart</strong> starts it over. Once you've picked a favorite, click
+    <strong>Select This Voice</strong> on its card, then <strong>Save Selected Voice</strong> below
+    to write it into <code>.env</code>.
+  </p>
+  <div class="sample-text" id="sampleText">Loading sample text…</div>
+  <div id="banners"></div>
+</header>
+
+<main>
+  <div class="grid" id="grid">Loading voices…</div>
+</main>
+
+<footer>
+  <div class="current" id="currentLabel">No voice selected yet.</div>
+  <button class="primary" id="saveBtn" disabled>Save Selected Voice</button>
+  <span id="saveMsg"></span>
+</footer>
+
+<script>
+const gridEl = document.getElementById('grid');
+const bannersEl = document.getElementById('banners');
+const sampleTextEl = document.getElementById('sampleText');
+const currentLabelEl = document.getElementById('currentLabel');
+const saveBtn = document.getElementById('saveBtn');
+const saveMsgEl = document.getElementById('saveMsg');
+
+let selectedVoiceId = null;
+let selectedVoiceName = null;
+let currentAudio = null;      // the single <audio> element allowed to play at once
+let currentPlayingId = null;
+
+function banner(kind, text) {
+  const div = document.createElement('div');
+  div.className = `banner ${kind}`;
+  div.textContent = text;
+  bannersEl.appendChild(div);
+}
+
+function stopCurrentAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+  }
+  currentAudio = null;
+  currentPlayingId = null;
+}
+
+function setCardStatus(card, text, cls) {
+  const statusEl = card.querySelector('.status');
+  statusEl.textContent = text;
+  statusEl.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function renderVoiceCard(voice) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.voiceId = voice.id;
+
+  card.innerHTML = `
+    <div class="card-top">
+      <div>
+        <p class="voice-name">${voice.name}</p>
+        <p class="voice-tagline">${voice.tagline ? voice.tagline : 'No description available.'}</p>
+      </div>
+      <span class="selected-chip">SELECTED</span>
+    </div>
+    <progress value="0" max="1"></progress>
+    <div class="status-row">
+      <span class="status">Idle</span>
+      <span class="time">0:00 / 0:00</span>
+    </div>
+    <div class="controls">
+      <button class="play-btn">Play</button>
+      <button class="restart-btn">Restart</button>
+      <button class="select-btn">Select This Voice</button>
+    </div>
+  `;
+
+  const playBtn = card.querySelector('.play-btn');
+  const restartBtn = card.querySelector('.restart-btn');
+  const selectBtn = card.querySelector('.select-btn');
+  const progressEl = card.querySelector('progress');
+  const timeEl = card.querySelector('.time');
+
+  let audio = null; // created lazily on first Play click, then reused for replay/pause/resume
+
+  function fmtTime(s) {
+    if (!isFinite(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
+  }
+
+  function ensureAudio() {
+    if (audio) return audio;
+    audio = new Audio(`/api/audio/${voice.id}`);
+    audio.preload = 'none';
+
+    audio.addEventListener('waiting', () => setCardStatus(card, 'Loading…'));
+    audio.addEventListener('canplay', () => {
+      if (!audio.paused) setCardStatus(card, 'Playing', 'playing');
+    });
+    audio.addEventListener('playing', () => {
+      playBtn.textContent = 'Pause';
+      setCardStatus(card, 'Playing', 'playing');
+    });
+    audio.addEventListener('pause', () => {
+      playBtn.textContent = 'Play';
+      if (!audio.ended) setCardStatus(card, 'Paused');
+    });
+    audio.addEventListener('ended', () => {
+      playBtn.textContent = 'Play';
+      setCardStatus(card, 'Idle');
+      audio.currentTime = 0;
+      progressEl.value = 0;
+      timeEl.textContent = `0:00 / ${fmtTime(audio.duration)}`;
+      if (currentPlayingId === voice.id) currentPlayingId = null;
+    });
+    audio.addEventListener('timeupdate', () => {
+      progressEl.max = isFinite(audio.duration) ? audio.duration : 1;
+      progressEl.value = audio.currentTime;
+      timeEl.textContent = `${fmtTime(audio.currentTime)} / ${fmtTime(audio.duration)}`;
+    });
+    audio.addEventListener('error', () => {
+      setCardStatus(card, 'Error — could not load this voice. Try Play again.', 'error');
+      playBtn.textContent = 'Play';
+    });
+    return audio;
+  }
+
+  playBtn.addEventListener('click', () => {
+    ensureAudio();
+    if (audio.paused) {
+      // Only one voice plays at a time: stop whatever else is playing first.
+      if (currentPlayingId && currentPlayingId !== voice.id && currentAudio) {
+        currentAudio.pause();
+      }
+      currentAudio = audio;
+      currentPlayingId = voice.id;
+      setCardStatus(card, 'Loading…');
+      audio.play().catch(() => {
+        setCardStatus(card, 'Error — playback failed.', 'error');
+      });
+    } else {
+      audio.pause(); // real pause: currentTime is preserved for resume
+    }
+  });
+
+  restartBtn.addEventListener('click', () => {
+    ensureAudio();
+    if (currentPlayingId && currentPlayingId !== voice.id && currentAudio) {
+      currentAudio.pause();
+    }
+    audio.currentTime = 0;
+    currentAudio = audio;
+    currentPlayingId = voice.id;
+    setCardStatus(card, 'Loading…');
+    audio.play().catch(() => setCardStatus(card, 'Error — playback failed.', 'error'));
+  });
+
+  selectBtn.addEventListener('click', () => {
+    document.querySelectorAll('.card.selected').forEach((el) => {
+      el.classList.remove('selected');
+      el.querySelector('.select-btn').classList.remove('is-selected');
+      el.querySelector('.select-btn').textContent = 'Select This Voice';
+    });
+    card.classList.add('selected');
+    selectBtn.classList.add('is-selected');
+    selectBtn.textContent = 'Selected ✓';
+    selectedVoiceId = voice.id;
+    selectedVoiceName = voice.name;
+    currentLabelEl.innerHTML = `Currently selected: <strong>${voice.name}</strong> — not saved yet.`;
+    saveBtn.disabled = false;
+    saveMsgEl.textContent = '';
+    saveMsgEl.className = '';
+  });
+
+  return card;
+}
+
+async function loadVoices() {
+  let data;
+  try {
+    const res = await fetch('/api/voices');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
+  } catch (err) {
+    gridEl.innerHTML = '';
+    banner('error', `Could not load the voice list from the server: ${err.message}. Is the server still running?`);
+    return;
+  }
+
+  sampleTextEl.textContent = `"${data.sample_text}"`;
+  if (!data.cartesia_configured) {
+    banner('warn', 'CARTESIA_API_KEY is not set in .env — Play will show an error for every voice until you set it and restart this server.');
+  }
+
+  gridEl.innerHTML = '';
+  data.voices.forEach((voice) => gridEl.appendChild(renderVoiceCard(voice)));
+}
+
+saveBtn.addEventListener('click', async () => {
+  if (!selectedVoiceId) return;
+  saveBtn.disabled = true;
+  saveMsgEl.textContent = 'Saving…';
+  saveMsgEl.className = '';
+  try {
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voice_id: selectedVoiceId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    saveMsgEl.textContent = data.message || 'Saved.';
+    saveMsgEl.className = 'ok';
+  } catch (err) {
+    saveMsgEl.textContent = `Could not save: ${err.message}`;
+    saveMsgEl.className = 'err';
+  } finally {
+    saveBtn.disabled = false;
+  }
+});
+
+loadVoices();
+</script>
+</body>
+</html>

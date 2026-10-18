@@ -1,0 +1,17 @@
+.git
+.env
+**/.env
+**/venv
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+backend/tests
+backend/logs
+backend/*.db
+backend/*.log
+backend/diagnostics
+backend/requirements.txt
+backend/requirements-legacy-twilio.txt
+frontend
+README.md

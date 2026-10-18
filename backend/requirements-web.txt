@@ -1,0 +1,15 @@
+# Pooja web version (browser call page + server). This is all the cloud host needs:
+# no microphone/speaker libraries and no PyTorch, so the image stays small.
+# Versions are the ones the project was tested with.
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+websockets==16.1.1
+python-dotenv==1.2.3
+loguru==0.7.3
+tzdata==2025.2
+numpy==2.4.6
+requests==2.34.2
+groq==1.7.0
+cartesia==4.2.0
+# Voice-activity detection on the server (prebuilt wheels, works on Linux and Windows)
+webrtcvad-wheels==2.0.14.post1

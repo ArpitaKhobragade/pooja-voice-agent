@@ -1,0 +1,21 @@
+# LEGACY, OPTIONAL: the original Twilio/Pipecat telephony pipeline
+# (main.py, voice/bot.py). NOT required to run Pooja (see requirements.txt
+# and pooja_cli.py) — this project no longer uses Twilio by requirement.
+# Install this only if you specifically want to resurrect the telephony
+# demo; it pulls in Pipecat's heavier dependencies (ONNX turn-detection
+# models etc.) on top of requirements.txt.
+
+# Web server
+fastapi
+uvicorn[standard]
+pydantic
+
+# Telephony
+twilio
+
+# Voice pipeline (Pipecat + the providers we use)
+pipecat-ai[sarvam,groq,silero]
+websockets
+
+# Gemini (post-call extraction only)
+google-genai
