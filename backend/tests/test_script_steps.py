@@ -7,6 +7,7 @@ history trim. Fake streaming LLM; no network.
 
 import os
 import sys
+import types
 import unittest
 from unittest.mock import patch
 
@@ -53,7 +54,8 @@ def run(llm, items):
 
 
 def step_text(i):
-    return SCRIPT_STEPS[i]["text"]
+    """A script step as said before the owner's gender is known: no Sir / Ma'am yet."""
+    return PoojaSession._addr(types.SimpleNamespace(honorific=None), SCRIPT_STEPS[i]["text"])
 
 
 class TestScriptIsFollowedVerbatim(unittest.TestCase):
@@ -69,7 +71,7 @@ class TestScriptIsFollowedVerbatim(unittest.TestCase):
         self.assertEqual(llm.calls, [])
         # out[0] is the opening; the next outputs are the steps, verbatim and in order
         for i, step in enumerate(SCRIPT_STEPS):
-            self.assertEqual(out[1 + i], step["text"], step["id"])
+            self.assertEqual(out[1 + i], step_text(i), step["id"])
 
     def test_yes_to_the_interest_question_gives_the_link_and_ends(self):
         llm = FakeStreamLLM()
@@ -77,8 +79,17 @@ class TestScriptIsFollowedVerbatim(unittest.TestCase):
         self.assertEqual(llm.calls, [])
         self.assertTrue(s.cm.get_state().interested_confirmed)
         self.assertTrue(s.cm.get_state().call_ended)
-        self.assertIn("hostelpgdekho.com/app", out[-1])
-        self.assertIn("WhatsApp", out[-1])  # honest about the demo limit
+        self.assertIn("aapke WhatsApp par app ka link send kar deti hoon", out[-1])
+        self.assertNotIn("hostelpgdekho.com/app", out[-1])  # sent on WhatsApp, not read out
+
+    def test_happy_reactions_count_as_acknowledgements_not_noise(self):
+        llm = FakeStreamLLM()
+        _, out = run(llm, ["haan ji", "wow", "great"])
+        self.assertEqual(llm.calls, [])
+        self.assertEqual(out[1], step_text(0))
+        self.assertTrue(out[2].endswith(step_text(1)))   # "wow" gets a warm reaction first
+        self.assertNotEqual(out[2], step_text(1))
+        self.assertIn(step_text(2), out[3])
 
     def test_no_to_the_interest_question_closes_politely(self):
         llm = FakeStreamLLM()

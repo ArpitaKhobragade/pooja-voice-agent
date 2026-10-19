@@ -158,6 +158,9 @@ _YES_TOKENS = {
     # Devanagari, in case STT returns it despite translit mode.
     "हाँ", "हां", "हा", "जी", "ठीक", "बताइए", "बताओ", "बोलिए", "बोलो", "ओके", "अच्छा", "बिल्कुल",
     "समझ", "सही", "यस", "इंटरेस्टेड",
+    # Happy reactions ("Wow", "Great") are acknowledgements too, not noise.
+    "wow", "wah", "waah", "great", "nice", "perfect", "superb", "awesome", "excellent", "badhiya",
+    "badiya", "shandar", "mast",
 }
 _NO_TOKENS = {"nahi", "nahin", "nahi.", "no", "nope", "mat", "नहीं", "नही", "मत", "नो"}
 # "dobara batao" / "phir se samjhao": a request to explain again, not a "go ahead".
@@ -199,7 +202,8 @@ def classify_reply(text: str) -> str:
 _KNOWN_SHORT = (
     _YES_TOKENS | _NO_TOKENS | _QUESTION_TOKENS | _LINK_TOKENS
     | {"hello", "hi", "hey", "namaste", "namaskar", "pranam", "bye", "sir", "madam", "mam", "busy", "free",
-       "app", "stop", "band", "kaun", "sunao", "suniye", "nahin", "thanks", "thank", "sorry", "please"}
+       "app", "stop", "band", "kaun", "sunao", "suniye", "nahin", "thanks", "thank", "sorry", "please",
+       "bahut", "oh", "ohh", "oho", "cool", "good", "bhi", "toh", "to"}
 )
 _GREETING_TOKENS = {"hello", "hi", "hey", "namaste", "namaskar", "pranam", "hallo", "helo", "ji"}
 
@@ -233,7 +237,17 @@ def is_greeting_only(text: str) -> bool:
 
 
 # Short natural reactions placed before a script step now and then, so it doesn't sound read out.
-LEAD_INS = ["Ji.", "Achha.", "Haan ji."]
+LEAD_INS = ["Ji.", "Achha.", "Haan ji.", "Ji bilkul.", "Theek hai."]
+# When the owner reacts warmly ("Wow", "Bahut achha"), Pooja answers the reaction before moving on.
+REACTIONS = ["Ji, shukriya!", "Haan ji, bilkul!", "Ji, mujhe bhi yehi lagta hai.", "Thank you ji!"]
+_REACTION_WORDS = {"wow", "wah", "waah", "great", "nice", "perfect", "superb", "awesome", "excellent",
+                   "badhiya", "badiya", "shandar", "mast", "bahut"}
+
+
+def _reaction_to(text: str) -> bool:
+    """True for a short warm reaction to something Pooja said ("Wow", "Bahut achha", "That's great")."""
+    toks = re.findall(r"[a-z']+", text.lower())
+    return 0 < len(toks) <= 4 and any(t in _REACTION_WORDS for t in toks)
 
 
 def _transcript_is_unreliable(text: str, duration_s: float, last_text: str | None) -> tuple[bool, str]:
@@ -295,7 +309,7 @@ class PoojaSession:
         self._lead_in_due = False
         self._last_owner_text = ""
         self.gender = GenderTracker()
-        self.honorific = "Sir"  # becomes "Ma'am" if the owner sounds like a woman
+        self.honorific: str | None = None  # "Sir" / "Ma'am" once the owner's voice or words show which
         self.llm = llm
         self.get_user_input = get_user_input
         self.deliver_reply = deliver_reply
@@ -311,7 +325,10 @@ class PoojaSession:
         # this dynamic state/objective block, rebuilt (not appended) every
         # time so context never grows from stale state snapshots.
         objective = determine_next_objective(self.cm.get_state())
-        note = f"Address the owner as \"{self.honorific}\" (use feminine-neutral wording if Ma'am).\n\n"
+        if self.honorific:
+            note = f"Address the owner as \"{self.honorific}\" (use feminine-neutral wording if Ma'am).\n\n"
+        else:
+            note = "You cannot tell yet whether the owner is a man or a woman: do not say Sir or Ma'am for now.\n\n"
         if self.conversational and not self.cm.get_state().get_slot("permission_granted").is_filled():
             note += (
                 "You already greeted the owner and asked if they can talk; their next message is the "
@@ -421,9 +438,14 @@ class PoojaSession:
                 self._covered_steps.add(step["id"])
 
     def _addr(self, text: str) -> str:
-        """Uses the right form of address ("Sir" / "Ma'am") in fixed lines."""
+        """Uses the right form of address in fixed lines: "Sir" / "Ma'am" once the owner's
+        voice or words show which, and no honorific at all until then (a wrong guess is worse)."""
         if self.honorific == "Ma'am":
             return re.sub(r"\b(Sir|Madam|Mam|Ma'am)\b", "Ma'am", text, flags=re.IGNORECASE)
+        if self.honorific is None:
+            text = re.sub(r"\b(?:Sir|Madam|Mam|Ma'am)\b,\s*", "", text, flags=re.IGNORECASE)
+            text = re.sub(r",?\s*\b(?:Sir|Madam|Mam|Ma'am)\b", "", text, flags=re.IGNORECASE)
+            return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), text)
         return text
 
     def _learn_owner(self, user_text: str) -> None:
@@ -446,7 +468,7 @@ class PoojaSession:
         script = [self._addr(step["text"]) for step in SCRIPT_STEPS]
         script += [self._addr(FINAL_STEP_TEXT.format(app_url=AGENT_CONFIG["app_url"]) + " Dhanyavaad Sir, take care!")]
         script += [self._line(k) for k in ("reintro", "closing_not_interested", "closing_busy_or_declined")]
-        script += LEAD_INS
+        script += LEAD_INS + REACTIONS
         return script + [self._line("closing_goodnight"), self._line("closing_no_response"), CANNED_REPROMPT] + UNCLEAR_PHRASES + SILENCE_PHRASES + [self._addr(r) for r in HOLD_ON_REPLIES]
 
     def _turn_reminder(self) -> str:
@@ -570,7 +592,12 @@ class PoojaSession:
         step = self._next_script_step()
         if step is None or self._awaiting_interest:
             return None
-        if self._lead_in_due:
+        reaction = _reaction_to(user_text)
+        if reaction:
+            # They reacted to what they just heard ("Wow", "Bahut achha"): respond to it like a person would.
+            self._lead_in_due = False
+            step = f"{random.choice(REACTIONS)} {step}"
+        elif self._lead_in_due:
             self._lead_in_due = False
         elif random.random() < 0.3:
             self._lead_in_due = True  # next step goes without one, so it never becomes a tic
@@ -719,7 +746,7 @@ class PoojaSession:
                     # Often a brief rate limit: hold on for a moment and try once more
                     # instead of hanging up on the owner.
                     logger.warning("LLM unavailable for this turn; asking for a second and retrying once.")
-                    self._speak("Ek second Sir, line thodi slow hai.", force=True)
+                    self._speak("Ek second Sir, line thodi slow hai.", force=True)  # _speak fits Sir/Ma'am
                     time.sleep(4.0)
                     try:
                         self._converse(user_text, retry=True)

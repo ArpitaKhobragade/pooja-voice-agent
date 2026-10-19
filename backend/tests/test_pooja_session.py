@@ -48,7 +48,7 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
     def test_tool_call_updates_state_and_reaches_terminal(self):
         llm = ScriptedLLM(
             [
-                _message("Hello Sir, good afternoon..."),  # opening
+                _message("Hello ji, good afternoon..."),  # opening
                 _message(None, [_tool_call("c1", "permission_granted", "yes")]),
                 _message("Great, let me tell you about our features..."),
                 _message(None, [_tool_call("c2", "interest_decision", "haan")]),
@@ -68,7 +68,7 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
 
         self.assertTrue(cm.get_state().interested_confirmed)
         self.assertTrue(cm.get_state().call_ended)
-        self.assertEqual(outputs[0], "Hello Sir, good afternoon...")
+        self.assertEqual(outputs[0], "Hello ji, good afternoon...")
         self.assertIn("Thank you, have a great day!", outputs)
         # Tool-result messages must be well-formed for the Groq API shape.
         tool_messages = [m for m in session.messages if m.get("role") == "tool"]
@@ -78,7 +78,7 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
     def test_stop_phrase_ends_call_without_llm_tool_loop_hanging(self):
         llm = ScriptedLLM(
             [
-                _message("Hello Sir..."),
+                _message("Hello ji..."),
                 _message("Okay, thank you, goodbye!"),
             ]
         )
@@ -93,8 +93,8 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
     def test_duplicate_reply_not_spoken_twice(self):
         llm = ScriptedLLM(
             [
-                _message("Hello Sir..."),
-                _message("Hello Sir..."),  # exact duplicate of opening
+                _message("Hello ji..."),
+                _message("Hello ji..."),  # exact duplicate of opening
             ]
         )
         inputs = iter(["bye"])
@@ -106,12 +106,12 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
         )
         session.run()
         # Only spoken once even though the model produced it twice.
-        self.assertEqual(outputs.count("Hello Sir..."), 1)
+        self.assertEqual(outputs.count("Hello ji..."), 1)
 
     def test_repeat_phrase_resays_last_line_without_extra_llm_call(self):
         llm = ScriptedLLM(
             [
-                _message("Hello Sir, good afternoon..."),  # opening
+                _message("Hello ji, good afternoon..."),  # opening
             ]
         )
         inputs = iter(["aap repeat kar sakte ho", "bye"])
@@ -126,14 +126,14 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
         # (never routed through the LLM — see STOP_PHRASES handling) so
         # only the opening ever calls the model.
         self.assertEqual(llm.calls, 1)
-        self.assertEqual(outputs[0], "Hello Sir, good afternoon...")
-        self.assertEqual(outputs[1], "Hello Sir, good afternoon...")  # repeated verbatim
+        self.assertEqual(outputs[0], "Hello ji, good afternoon...")
+        self.assertEqual(outputs[1], "Hello ji, good afternoon...")  # repeated verbatim
         self.assertTrue(session.cm.state.call_ended)
 
     def test_barge_in_sets_interrupted_flag_for_next_turn(self):
         llm = ScriptedLLM(
             [
-                _message("Hello Sir, good afternoon..."),
+                _message("Hello ji, good afternoon..."),
                 _message("Continuing after interruption..."),
             ]
         )
@@ -151,7 +151,7 @@ class TestPoojaSessionToolLoop(unittest.TestCase):
     def test_max_turns_safety_net_ends_call(self):
         # Every turn: user reply, model responds with no tool call and a
         # never-progressing message — must hit MAX_TURNS and stop, not loop forever.
-        responses = [_message("Hello Sir...")]
+        responses = [_message("Hello ji...")]
         for _ in range(60):
             responses.append(_message("Still thinking about it..."))
         llm = ScriptedLLM(responses)

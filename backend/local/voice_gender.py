@@ -23,7 +23,7 @@ import re
 import numpy as np
 
 SAMPLE_RATE = 16000
-_MIN_VOICED_FRAMES = 14       # ~0.3s of voiced speech needed before trusting pitch
+_MIN_VOICED_FRAMES = 10       # ~0.2s of voiced speech needed before trusting pitch
 _FEMALE_MIN_HZ = 178.0
 _MALE_MAX_HZ = 150.0
 
@@ -61,7 +61,7 @@ def voiced_f0s(pcm: np.ndarray, sr: int = SAMPLE_RATE) -> list[float]:
     for start in range(0, len(pcm) - frame, hop):
         x = pcm[start:start + frame].astype(np.float64)
         x -= x.mean()
-        if np.sqrt(np.mean(x ** 2)) < 300:  # too quiet to be speech on a normal mic
+        if np.sqrt(np.mean(x ** 2)) < 220:  # too quiet to be speech on a normal mic
             continue
         x *= window
         spec = np.fft.rfft(x, 2 * frame)
@@ -70,8 +70,19 @@ def voiced_f0s(pcm: np.ndarray, sr: int = SAMPLE_RATE) -> list[float]:
             continue
         ac = ac / ac[0]
         lag = lo + int(np.argmax(ac[lo:hi]))
-        if ac[lag] > 0.5:  # strongly periodic => voiced
-            out.append(sr / lag)
+        if ac[lag] <= 0.5:  # not strongly periodic => not voiced
+            continue
+        # Autocorrelation often locks onto a multiple of the true period, which halves the pitch
+        # and turns a woman's voice into a man's. Prefer the shorter period when it is nearly as strong.
+        for div in (3, 2):
+            cand = lag // div
+            if cand >= lo:
+                window_lo, window_hi = max(lo, cand - 2), min(hi, cand + 3)
+                best = window_lo + int(np.argmax(ac[window_lo:window_hi]))
+                if ac[best] >= 0.85 * ac[lag]:
+                    lag = best
+                    break
+        out.append(sr / lag)
     return out
 
 

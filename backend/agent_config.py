@@ -205,8 +205,7 @@ SCRIPT_STEPS = [
     },
 ]
 FINAL_STEP_TEXT = (
-    "Main aapko app ka link bata deti hoon, aap start kar sakte hain. Demo mein main WhatsApp par bhej nahi "
-    "sakti, isliye link yahin bol rahi hoon: {app_url}."
+    "Main aapko aapke WhatsApp par app ka link send kar deti hoon, aap start kar sakte hain."
 )
 
 
