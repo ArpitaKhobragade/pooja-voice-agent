@@ -3,152 +3,203 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ecebf8">
 <title>Pooja | HostelPGDekho voice agent</title>
 <meta name="description" content="Talk to Pooja, HostelPGDekho's calling assistant, and read the conversation as it happens.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff3d9a'/%3E%3Cpath d='M6 14 16 6l10 8v12H6z' fill='%2317143f'/%3E%3Crect x='10' y='15' width='4' height='5' rx='2' fill='%23ecebf8'/%3E%3Crect x='18' y='15' width='4' height='5' rx='2' fill='%23ecebf8'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Two inks on paper. Where they overlap (you talking over Pooja) they print purple. */
   :root {
-    --ground: #e9edf5;
-    --surface: #ffffff;
-    --ink: #101b3b;
-    --ink-soft: #4a5675;
-    --line: #d3dbea;
-    --pooja: #f2a31b;
-    --pooja-ink: #3b2500;
-    --owner: #101b3b;
-    --owner-ink: #f4f7ff;
-    --danger: #b3261e;
-    --ok: #18704f;
-    --focus: #2f5bea;
-    --radius: 14px;
-    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-    --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+    --paper: #ecebf8;
+    --paper-deep: #dedcf0;
+    --ink: #17143f;
+    --ink-soft: #55527a;
+    --line: #c9c6e6;
+    --pink: #ff3d9a;
+    --blue: #2260f0;
+    --window-off: #d3d0ec;
+    --both: #8e3bef;
+    --focus: #2260f0;
+    --blend: multiply;
+    --grain-opacity: .22;
+    --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+    --body: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --ground: #0a1020;
-      --surface: #111a33;
-      --ink: #eaf0ff;
-      --ink-soft: #a5b1d1;
-      --line: #25314f;
-      --owner: #dfe8ff;
-      --owner-ink: #0d1530;
-      --pooja-ink: #2d1c00;
-      --danger: #ff8a80;
-      --ok: #5fd1a3;
-      --focus: #8fb0ff;
+      --paper: #100f33;
+      --paper-deep: #1a1948;
+      --ink: #f1efff;
+      --ink-soft: #a9a6d6;
+      --line: #2c2a63;
+      --pink: #ff5fb0;
+      --blue: #5b8dff;
+      --window-off: #25235a;
+      --both: #d9a6ff;
+      --focus: #9db9ff;
+      --blend: screen;
+      --grain-opacity: .12;
     }
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html { background: var(--paper); }
   body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased;
+    margin: 0; min-height: 100vh; color: var(--ink); background: var(--paper);
+    font: 17px/1.5 var(--body); -webkit-font-smoothing: antialiased;
   }
-  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-  .shell { max-width: 1120px; margin: 0 auto; padding: 28px 20px 40px; min-height: 100%; display: flex; flex-direction: column; gap: 24px; }
+  /* print grain */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    opacity: var(--grain-opacity); mix-blend-mode: var(--blend);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35  0 0 0 0 .32  0 0 0 0 .6  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
 
-  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .brand { font: 700 1.35rem/1 var(--display); letter-spacing: -0.01em; }
-  .brand span { font-weight: 500; color: var(--ink-soft); }
-  .hint { color: var(--ink-soft); font-size: 0.9rem; margin: 0; }
+  .shell { max-width: 1240px; margin: 0 auto; padding: 22px 28px 28px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .mark { display: flex; align-items: center; gap: 10px; font: 700 1rem var(--display); letter-spacing: -.01em; }
+  .mark svg { width: 30px; height: 30px; flex: none; }
+  .hint { margin: 0; color: var(--ink-soft); font-size: .9rem; }
 
-  .grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px; flex: 1; min-height: 0; }
-  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 0; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
 
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  /* ---------- left: the call ---------- */
+  .call { padding: 14px 40px 20px 0; display: flex; flex-direction: column; gap: 22px; }
+  @media (max-width: 900px) { .call { padding-right: 0; } }
+  h1 {
+    font: 900 clamp(2.6rem, 6.4vw, 4.9rem)/.94 var(--display); letter-spacing: -.045em; margin: 0;
+    text-shadow: .045em .045em 0 var(--pink);
+  }
+  .lede { margin: 0; max-width: 38ch; color: var(--ink-soft); font-size: 1.04rem; }
 
-  /* ---- call panel ---- */
-  .call { padding: 28px 26px 24px; display: flex; flex-direction: column; gap: 20px; }
-  .call h1 { font: 700 clamp(1.9rem, 4vw, 2.7rem)/1.05 var(--display); letter-spacing: -0.02em; margin: 0; max-width: 14ch; }
-  .call p.lede { margin: 0; color: var(--ink-soft); max-width: 40ch; }
+  .stage { position: relative; display: grid; grid-template-columns: minmax(0, 290px) minmax(190px, 1fr); gap: 22px; align-items: end; }
+  .building { width: 100%; max-width: 330px; aspect-ratio: 1 / 1.02; display: block; }
+  .stage-side { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; padding-bottom: 8px; }
+  /* phone: keep the building small and the main button on the first screen */
+  @media (max-width: 560px) {
+    .shell { padding: 16px 18px 24px; }
+    .stage { grid-template-columns: 138px minmax(0, 1fr); gap: 16px; align-items: center; }
+    .building { max-width: 138px; }
+    .stage-side { gap: 10px; padding-bottom: 0; }
+    .legend { font-size: .78rem; gap: 3px; }
+    .legend i { width: 11px; height: 11px; margin-right: 7px; }
+    .status { font-size: .82rem; }
+    .lede { font-size: .97rem; }
+    .call { gap: 16px; }
+    .hint { display: none; }
+  }
 
-  .voice { position: relative; height: 132px; border-radius: 12px; background: var(--ground); overflow: hidden; }
-  .voice canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .legend { display: flex; gap: 18px; font-size: 0.85rem; color: var(--ink-soft); }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: baseline; }
-  .legend .l-owner i { background: var(--owner); }
-  .legend .l-pooja i { background: var(--pooja); }
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; font-size: .9rem; color: var(--ink-soft); }
+  .legend i { display: inline-block; width: 13px; height: 13px; margin-right: 9px; vertical-align: -2px; border: 1.5px solid var(--ink); }
+  .legend .p i { background: var(--pink); }
+  .legend .o i { background: var(--blue); }
+  .legend .b i { background: var(--both); }
 
-  .status { display: flex; align-items: center; gap: 10px; font-weight: 600; min-height: 1.6em; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
-  .status[data-state="listening"] .dot { background: var(--ok); }
-  .status[data-state="thinking"] .dot { background: var(--ink-soft); }
-  .status[data-state="speaking"] .dot { background: var(--pooja); }
-  .status[data-state="connecting"] .dot { background: var(--ink-soft); }
-  .status[data-state="error"] .dot { background: var(--danger); }
-  .status[data-state="listening"] .dot, .status[data-state="speaking"] .dot { animation: pulse 1.4s ease-in-out infinite; }
-  @keyframes pulse { 50% { transform: scale(1.5); opacity: .55; } }
-  @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
+  .status { display: flex; align-items: center; gap: 11px; font: 700 .92rem/1.25 var(--display); letter-spacing: -.01em; min-height: 1.6em; }
+  .sq { width: 13px; height: 13px; border: 1.5px solid var(--ink); background: var(--window-off); flex: none; transform: rotate(45deg); transition: background .2s; }
+  .status[data-state="listening"] .sq { background: var(--blue); }
+  .status[data-state="speaking"] .sq { background: var(--pink); }
+  .status[data-state="thinking"] .sq { background: var(--ink-soft); }
+  .status[data-state="connecting"] .sq { background: var(--ink-soft); }
+  .status[data-state="error"] .sq { background: var(--pink); }
+  .status[data-state="listening"] .sq, .status[data-state="speaking"] .sq { animation: tick 1.3s ease-in-out infinite; }
+  @keyframes tick { 50% { transform: rotate(45deg) scale(1.35); } }
+  @media (prefers-reduced-motion: reduce) { .sq { animation: none !important; } }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  button { font: 600 1rem var(--body); cursor: pointer; border-radius: 999px; border: 1px solid transparent; padding: 14px 28px; transition: transform .08s ease, background .15s ease; }
-  button:active:not(:disabled) { transform: translateY(1px); }
-  button:disabled { opacity: .55; cursor: not-allowed; }
-  .primary { background: var(--pooja); color: var(--pooja-ink); min-width: 170px; }
-  .primary:hover:not(:disabled) { background: #ffb53a; }
-  .primary.live, .primary.live:hover:not(:disabled) { background: #c9372c; color: #fff; }
-  .ghost { background: transparent; color: var(--ink); border-color: var(--line); padding: 9px 16px; font-weight: 500; font-size: .92rem; }
-  .ghost:hover:not(:disabled) { background: var(--ground); }
+  /* the stamp */
+  .stamp {
+    appearance: none; cursor: pointer; flex: none;
+    width: 142px; height: 142px; border-radius: 50%;
+    border: 3px solid var(--ink); background: var(--pink); color: #17143f;
+    font: 900 1.12rem/1.05 var(--display); letter-spacing: -.02em; text-align: center;
+    box-shadow: 7px 7px 0 var(--blue);
+    transform: rotate(-5deg); transition: transform .12s ease, box-shadow .12s ease, background .15s;
+    display: grid; place-items: center; padding: 0;
+  }
+  .stamp:hover:not(:disabled) { transform: rotate(-2deg) translate(-1px, -1px); box-shadow: 9px 9px 0 var(--blue); }
+  .stamp:active:not(:disabled) { transform: rotate(-2deg) translate(5px, 5px); box-shadow: 2px 2px 0 var(--blue); }
+  .stamp:disabled { opacity: .6; cursor: not-allowed; }
+  .stamp.live { background: var(--blue); color: #fff; box-shadow: 7px 7px 0 var(--pink); }
+  .stamp.live:hover:not(:disabled) { box-shadow: 9px 9px 0 var(--pink); }
+  .stamp.live:active:not(:disabled) { box-shadow: 2px 2px 0 var(--pink); }
+  @media (prefers-color-scheme: dark) { .stamp { color: #17143f; } .stamp.live { color: #0b0a28; } }
+  /* declared after the base stamp rules so it wins on phones */
+  @media (max-width: 560px) {
+    .stamp { width: 112px; height: 112px; font-size: .95rem; box-shadow: 5px 5px 0 var(--blue); }
+    .stamp:hover:not(:disabled) { box-shadow: 6px 6px 0 var(--blue); }
+    .stamp.live, .stamp.live:hover:not(:disabled) { box-shadow: 5px 5px 0 var(--pink); }
+  }
 
-  .code { display: none; flex-direction: column; gap: 6px; max-width: 280px; }
-  .code.show { display: flex; }
-  .code label { font-size: .9rem; font-weight: 600; }
-  .code input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
-
-  .banner { display: none; border: 1px solid var(--line); border-left: 4px solid var(--danger); border-radius: 10px; padding: 12px 14px; font-size: .95rem; background: var(--surface); }
+  .banner { display: none; border: 2px solid var(--ink); background: color-mix(in srgb, var(--pink) 18%, var(--paper)); padding: 11px 14px; font-size: .95rem; box-shadow: 4px 4px 0 var(--ink); max-width: 46ch; }
   .banner.show { display: block; }
-  .banner.info { border-left-color: var(--ok); }
+  .banner.info { background: color-mix(in srgb, var(--blue) 14%, var(--paper)); }
 
-  .fine { font-size: .85rem; color: var(--ink-soft); margin: 0; max-width: 46ch; }
+  .code { display: none; flex-direction: column; gap: 4px; max-width: 280px; }
+  .code.show { display: flex; }
+  .code label { font: 700 .8rem var(--display); }
+  .code input { font: inherit; padding: 8px 2px; border: 0; border-bottom: 2.5px solid var(--ink); background: transparent; color: var(--ink); border-radius: 0; }
+  .code input::placeholder { color: var(--ink-soft); }
 
-  /* ---- transcript ---- */
-  .transcript { display: flex; flex-direction: column; min-height: 460px; max-height: calc(100vh - 150px); }
-  @media (max-width: 860px) { .transcript { min-height: 360px; max-height: none; } }
-  .t-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-  .t-head h2 { font: 700 1.15rem var(--display); margin: 0; }
-  .t-tools { display: flex; gap: 8px; }
-  .log { list-style: none; margin: 0; padding: 18px 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1; scroll-behavior: smooth; }
+  .fine { font-size: .84rem; color: var(--ink-soft); margin: 0; max-width: 46ch; }
+
+  /* ---------- right: the register ---------- */
+  .register { border-left: 2.5px solid var(--ink); padding-left: 40px; display: flex; flex-direction: column; min-height: 520px; max-height: calc(100vh - 100px); position: sticky; top: 16px; align-self: start; height: calc(100vh - 100px); }
+  @media (max-width: 900px) { .register { border-left: 0; border-top: 2.5px solid var(--ink); padding-left: 0; padding-top: 22px; margin-top: 26px; position: static; height: auto; max-height: none; min-height: 380px; } }
+  .r-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0 14px; }
+  .r-head h2 { font: 900 1.45rem/1 var(--display); letter-spacing: -.035em; margin: 0; }
+  .tools { display: flex; gap: 10px; }
+  .tool { appearance: none; cursor: pointer; font: 600 .86rem var(--body); color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 15px; box-shadow: 3px 3px 0 var(--ink); transition: transform .1s, box-shadow .1s; }
+  .tool:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+  .tool:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .tool:disabled { opacity: .45; cursor: not-allowed; box-shadow: 3px 3px 0 var(--line); border-color: var(--line); }
+
+  .log { list-style: none; margin: 0; padding: 0 8px 20px 0; overflow-y: auto; flex: 1; scroll-behavior: smooth; border-top: 1.5px solid var(--line); }
   @media (prefers-reduced-motion: reduce) { .log { scroll-behavior: auto; } }
-  .empty { margin: auto; text-align: center; color: var(--ink-soft); max-width: 30ch; }
-  .turn { max-width: 88%; display: flex; flex-direction: column; gap: 4px; }
-  .turn.pooja { align-self: flex-start; }
-  .turn.owner { align-self: flex-end; align-items: flex-end; }
-  .who { font-size: .82rem; color: var(--ink-soft); display: flex; gap: 8px; }
-  .who b { color: var(--ink); font-weight: 600; }
-  .bubble { margin: 0; padding: 11px 15px; border-radius: 16px; line-height: 1.45; max-width: 62ch; overflow-wrap: anywhere; }
-  .pooja .bubble { background: color-mix(in srgb, var(--pooja) 22%, var(--surface)); border-top-left-radius: 5px; }
-  .owner .bubble { background: var(--owner); color: var(--owner-ink); border-top-right-radius: 5px; }
-  .cut { font-size: .8rem; color: var(--ink-soft); font-style: italic; }
-  .note { align-self: center; font-size: .85rem; color: var(--ink-soft); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
-  .note.good { color: var(--ok); }
-  .note.bad { color: var(--danger); }
+  .empty { padding: 26px 0; color: var(--ink-soft); max-width: 34ch; }
+  .turn { display: grid; grid-template-columns: 50px 1fr; gap: 14px; padding: 15px 0; border-bottom: 1.5px solid var(--line); }
+  .time { font-size: .8rem; color: var(--ink-soft); padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .who { font: 700 .78rem/1 var(--display); letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .who::before { content: ""; width: 11px; height: 11px; border: 1.5px solid var(--ink); background: var(--pink); }
+  .owner .who::before { background: var(--blue); }
+  .text { margin: 0; font-size: 1.06rem; line-height: 1.62; max-width: 58ch; overflow-wrap: anywhere; }
+  .hl { background: linear-gradient(transparent 54%, color-mix(in srgb, var(--pink) 34%, transparent) 54%); -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 0 2px; }
+  .owner .hl { background: linear-gradient(transparent 54%, color-mix(in srgb, var(--blue) 30%, transparent) 54%); }
+  .cut { margin-left: 4px; font: 600 .74rem var(--body); color: var(--ink); background: color-mix(in srgb, var(--both) 38%, var(--paper)); padding: 2px 8px; border-radius: 99px; }
+  .note { margin: 18px 0 6px; padding-left: 64px; }
+  .note span { display: inline-block; font: 700 .76rem var(--display); letter-spacing: -.01em; border: 2px solid var(--ink); padding: 6px 12px; transform: rotate(-1.5deg); background: var(--paper); box-shadow: 3px 3px 0 var(--blue); }
+  .note.bad span { box-shadow: 3px 3px 0 var(--pink); }
 </style>
 </head>
 <body>
 <div class="shell">
   <header>
-    <div class="brand">Pooja <span>for HostelPGDekho</span></div>
-    <p class="hint">Works best in Chrome or Edge. Headphones give the cleanest conversation.</p>
+    <div class="mark">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--pink)" stroke="var(--ink)" stroke-width="2"/><path d="M6 14 16 6l10 8v12H6z" fill="var(--ink)"/><rect x="10" y="15" width="4" height="5" rx="2" fill="var(--paper)"/><rect x="18" y="15" width="4" height="5" rx="2" fill="var(--paper)"/></svg>
+      <span>Pooja for HostelPGDekho</span>
+    </div>
+    <p class="hint">Works best in Chrome or Edge. Headphones keep the conversation clean.</p>
   </header>
 
   <main class="grid">
-    <section class="panel call" aria-labelledby="title">
-      <div>
-        <h1 id="title">Talk to Pooja</h1>
-      </div>
-      <p class="lede">Pooja calls PG owners about HostelPGDekho. Press start, allow your microphone, and answer the way a PG owner would. You can interrupt her at any time.</p>
+    <section class="call" aria-labelledby="title">
+      <h1 id="title">Talk to Pooja.</h1>
+      <p class="lede">Pooja phones PG owners about HostelPGDekho. Press start, allow your microphone, and answer the way an owner would. Interrupt her whenever you like.</p>
 
-      <div class="voice" aria-hidden="true"><canvas id="wave"></canvas></div>
-      <div class="legend" aria-hidden="true">
-        <span class="l-owner"><i></i>You</span>
-        <span class="l-pooja"><i></i>Pooja</span>
-      </div>
-
-      <div class="status" id="status" data-state="idle" role="status" aria-live="polite">
-        <span class="dot"></span><span id="statusText">Ready when you are</span>
+      <div class="stage">
+        <canvas id="wave" class="building" role="img" aria-label="A PG building whose windows light up as Pooja or you speak"></canvas>
+        <div class="stage-side">
+          <ul class="legend" aria-hidden="true">
+            <li class="p"><i></i>Pooja talking</li>
+            <li class="o"><i></i>You talking</li>
+            <li class="b"><i></i>Both at once</li>
+          </ul>
+          <div class="status" id="status" data-state="idle" role="status" aria-live="polite"><span class="sq"></span><span id="statusText">Ready when you are</span></div>
+          <button class="stamp" id="callBtn" type="button">Start call</button>
+        </div>
       </div>
 
       <div class="banner" id="banner" role="alert"></div>
@@ -158,23 +209,19 @@
         <input id="code" type="password" autocomplete="off" placeholder="Enter the code you were given">
       </div>
 
-      <div class="actions">
-        <button class="primary" id="callBtn" type="button">Start call</button>
-      </div>
-
-      <p class="fine">Your voice is sent to speech-recognition and AI services so Pooja can reply. Nothing is recorded on this page; use Download to keep the transcript.</p>
+      <p class="fine">Your voice goes to speech-recognition and AI services so Pooja can reply. Nothing is recorded on this page. Use Download to keep the transcript.</p>
     </section>
 
-    <section class="panel transcript" aria-labelledby="tHead">
-      <div class="t-head">
+    <section class="register" aria-labelledby="tHead">
+      <div class="r-head">
         <h2 id="tHead">Transcript</h2>
-        <div class="t-tools">
-          <button class="ghost" id="copyBtn" type="button" disabled>Copy</button>
-          <button class="ghost" id="saveBtn" type="button" disabled>Download</button>
+        <div class="tools">
+          <button class="tool" id="copyBtn" type="button" disabled>Copy</button>
+          <button class="tool" id="saveBtn" type="button" disabled>Download</button>
         </div>
       </div>
       <ol class="log" id="log" role="log" aria-live="polite" aria-label="Conversation transcript">
-        <li class="empty" id="empty">The conversation shows up here as you talk, with Pooja on the left and you on the right.</li>
+        <li class="empty" id="empty">Every line of the call lands here with its time. Pooja is marked in pink, you in blue.</li>
       </ol>
     </section>
   </main>
@@ -196,10 +243,9 @@
   let callStarted = false;       // true once the server says "ready" for this call
   let playhead = 0, sources = new Set();
   let micLevel = 0, poojaLevel = 0, shownOwner = 0, shownPooja = 0;
-  let turns = new Map();         // "speaker:turn" -> {li, p}
+  let turns = new Map();         // "speaker:turn" -> {li, text, cut}
   let lines = [];                // plain transcript for copy / download
   let config = { requires_code: false, ready: true, missing: [] };
-  let startedAt = 0;
 
   const SAMPLE_RATE = 16000, CHUNK = 512;
 
@@ -213,7 +259,9 @@
     emptyEl.remove();
     const li = document.createElement("li");
     li.className = "note " + (kind || "");
-    li.textContent = text;
+    const span = document.createElement("span");
+    span.textContent = text;
+    li.appendChild(span);
     logEl.appendChild(li);
     logEl.scrollTop = logEl.scrollHeight;
   }
@@ -225,19 +273,27 @@
     if (!entry) {
       const li = document.createElement("li");
       li.className = "turn " + speaker;
+      const time = document.createElement("time");
+      time.className = "time";
+      time.textContent = mmss(t || 0);
+      const body = document.createElement("div");
       const who = document.createElement("div");
       who.className = "who";
-      who.innerHTML = `<b>${speaker === "pooja" ? "Pooja" : "You"}</b><time>${mmss(t || 0)}</time>`;
+      who.textContent = speaker === "pooja" ? "Pooja" : "You";
       const p = document.createElement("p");
-      p.className = "bubble";
-      li.append(who, p);
+      p.className = "text";
+      const hl = document.createElement("span");
+      hl.className = "hl";
+      p.appendChild(hl);
+      body.append(who, p);
+      li.append(time, body);
       logEl.appendChild(li);
-      entry = { li, p, text: "" };
+      entry = { li, hl, who, text: "", cut: false };
       turns.set(key, entry);
       lines.push({ t: t || 0, who: speaker === "pooja" ? "Pooja" : "Owner", entry });
     }
     entry.text = entry.text ? entry.text + " " + text : text;
-    entry.p.textContent = entry.text;
+    entry.hl.textContent = entry.text;
     logEl.scrollTop = logEl.scrollHeight;
     copyBtn.disabled = saveBtn.disabled = false;
   }
@@ -282,7 +338,7 @@
     const pcm = new Int16Array(buffer);
     let sum = 0;
     for (let i = 0; i < pcm.length; i++) sum += pcm[i] * pcm[i];
-    micLevel = Math.min(1, Math.sqrt(sum / pcm.length) / 6000);
+    micLevel = Math.min(1, Math.sqrt(sum / pcm.length) / 5000);
     if (ws && ws.readyState === WebSocket.OPEN && (phase === "connecting" || phase === "live")) ws.send(buffer);
   }
 
@@ -308,11 +364,18 @@
     playhead = 0;
   }
 
-  // ---------- the voice line ----------
+  // ---------- the building: windows are the voice meter ----------
   const g = canvas.getContext("2d");
-  const BARS = 56;
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const COLS = 4, ROWS = 4;
+  // a fixed shuffled order, so windows light in a stable, organic pattern
+  const rank = (() => {
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const idx = Array.from({ length: COLS * ROWS }, (_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    const r = []; idx.forEach((win, order) => (r[win] = (order + 0.5) / idx.length)); return r;
+  })();
 
   function fitCanvas() {
     const r = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1;
@@ -321,33 +384,76 @@
   }
   window.addEventListener("resize", fitCanvas);
 
-  let frame = 0;
+  function arch(x, y, w, h) {
+    g.beginPath();
+    if (g.roundRect) g.roundRect(x, y, w, h, [w / 2, w / 2, 3, 3]); else g.rect(x, y, w, h);
+  }
+
   function draw(now) {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    if (!W || !H) return;
     if (analyser) {
       const data = new Uint8Array(analyser.fftSize);
       analyser.getByteTimeDomainData(data);
       let sum = 0;
       for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
-      poojaLevel = Math.min(1, Math.sqrt(sum / data.length) * 3.2);
+      poojaLevel = Math.min(1, Math.sqrt(sum / data.length) * 3.4);
     }
-    shownOwner += (micLevel - shownOwner) * 0.25;
-    shownPooja += (poojaLevel - shownPooja) * 0.25;
-    micLevel *= 0.9;
+    shownOwner += (micLevel - shownOwner) * 0.3;
+    shownPooja += (poojaLevel - shownPooja) * 0.3;
+    micLevel *= 0.88;
 
-    g.clearRect(0, 0, w, h);
-    const owner = shownOwner > shownPooja;
-    const level = reduceMotion ? 0.15 : Math.max(shownOwner, shownPooja);
-    g.fillStyle = owner ? css("--owner") : css("--pooja");
-    const gap = w / BARS, bw = Math.max(2, gap * 0.52);
-    for (let i = 0; i < BARS; i++) {
-      const x = i * gap + (gap - bw) / 2;
-      const wobble = reduceMotion ? 0.5 : 0.45 + 0.55 * Math.abs(Math.sin(now / 240 + i * 0.7) * Math.cos(now / 410 + i * 0.31));
-      const edge = 1 - Math.pow(Math.abs(i - BARS / 2) / (BARS / 2), 1.6) * 0.75;
-      const bh = Math.max(3, level * wobble * edge * (h - 18));
+    const bothInk = css("--both"), ink = css("--ink"), pink = css("--pink"), blue = css("--blue"), off = css("--window-off"), paper = css("--paper-deep"), blend = css("--blend") || "multiply";
+    g.clearRect(0, 0, W, H);
+
+    // geometry
+    const m = W * 0.1, bx = m, bw = W - m * 2, roofTop = H * 0.05, bodyTop = H * 0.21, ground = H * 0.94;
+    const cx = bx + bw / 2, groundH = H * 0.16;
+    const pathBuilding = () => {
       g.beginPath();
-      g.roundRect ? g.roundRect(x, (h - bh) / 2, bw, bh, bw / 2) : g.rect(x, (h - bh) / 2, bw, bh);
-      g.fill();
+      g.moveTo(bx - bw * 0.05, bodyTop); g.lineTo(cx, roofTop); g.lineTo(bx + bw + bw * 0.05, bodyTop);
+      g.lineTo(bx + bw, bodyTop); g.lineTo(bx + bw, ground); g.lineTo(bx, ground); g.lineTo(bx, bodyTop); g.closePath();
+    };
+
+    // misprinted shadow plate
+    g.save(); g.translate(W * 0.03, W * 0.03); pathBuilding(); g.fillStyle = blue; g.fill(); g.restore();
+    // wall
+    pathBuilding(); g.fillStyle = paper; g.fill(); g.lineWidth = 3; g.strokeStyle = ink; g.lineJoin = "round"; g.stroke();
+    // roof line
+    g.beginPath(); g.moveTo(bx - bw * 0.05, bodyTop); g.lineTo(bx + bw + bw * 0.05, bodyTop); g.lineWidth = 3; g.stroke();
+
+    // door
+    const dw = bw * 0.2, dh = groundH * 0.95;
+    arch(cx - dw / 2, ground - dh, dw, dh); g.fillStyle = ink; g.fill();
+
+    // windows
+    const padX = bw * 0.09, top = bodyTop + (ground - groundH - bodyTop) * 0.09;
+    const cw = (bw - padX * 2) / COLS, ch = (ground - groundH - top) / ROWS;
+    const ww = cw * 0.52, wh = ch * 0.62;
+    const ambient = reduceMotion ? 0.06 : 0.07 + 0.05 * Math.sin(now / 1500);
+    const lp = Math.max(shownPooja, phase === "idle" ? ambient : 0) * 1.25;
+    const lo = shownOwner * 1.25;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const i = r * COLS + c, rk = rank[i];
+        const x = bx + padX + c * cw + (cw - ww) / 2, y = top + r * ch + (ch - wh) / 2;
+        const flick = reduceMotion ? 0 : 0.07 * Math.sin(now / 120 + i * 2.1);
+        arch(x, y, ww, wh); g.fillStyle = off; g.fill();
+        g.save();
+        arch(x, y, ww, wh); g.clip();
+        g.globalCompositeOperation = blend;
+        const pa = Math.max(0, Math.min(1, (lp - rk) * 5 + flick));
+        const oa = Math.max(0, Math.min(1, (lo - (1 - rk)) * 5 + flick));
+        if (pa > 0.02) { g.globalAlpha = pa; g.fillStyle = pink; g.fillRect(x, y, ww, wh); }
+        if (oa > 0.02) { g.globalAlpha = oa; g.fillStyle = blue; g.fillRect(x, y, ww, wh); }
+        // both inks on one window (you talking over Pooja): overprint purple
+        const both = Math.min(pa, oa);
+        if (both > 0.02) { g.globalCompositeOperation = "source-over"; g.globalAlpha = both; g.fillStyle = bothInk; g.fillRect(x, y, ww, wh); }
+        g.restore();
+        arch(x, y, ww, wh); g.lineWidth = 2; g.strokeStyle = ink; g.stroke();
+        // window cross bar
+        g.beginPath(); g.moveTo(x + ww / 2, y + ww / 2); g.lineTo(x + ww / 2, y + wh); g.lineWidth = 1.2; g.stroke();
+      }
     }
   }
 
@@ -392,7 +498,6 @@
       playGain.connect(analyser); analyser.connect(ctx.destination);
     } catch (e) { showBanner("Audio setup failed: " + e.message + ". Try Chrome or Edge."); return resetToIdle("error", "Audio setup failed"); }
 
-    startedAt = Date.now();
     ws = new WebSocket(wsUrl());
     ws.binaryType = "arraybuffer";
     ws.onopen = () => ws.send(JSON.stringify({ type: "start" }));
@@ -415,7 +520,11 @@
         setStatus(m.state, map[m.state] || m.state); break;
       }
       case "transcript": addLine(m.speaker, m.turn, m.text, m.t); break;
-      case "interrupted": { const e = turns.get("pooja:" + m.turn); if (e) { e.cut = true; const c = document.createElement("span"); c.className = "cut"; c.textContent = "interrupted"; e.li.querySelector(".who").appendChild(c); } break; }
+      case "interrupted": {
+        const e = turns.get("pooja:" + m.turn);
+        if (e && !e.cut) { e.cut = true; const c = document.createElement("span"); c.className = "cut"; c.textContent = "talked over"; e.who.appendChild(c); }
+        break;
+      }
       case "clear": clearPlayback(); break;
       case "notice": addNote(m.message, ""); break;
       case "error": showBanner(m.message); break;
@@ -470,13 +579,13 @@
   callBtn.addEventListener("click", () => {
     if (phase === "idle") {
       // a new call starts with a clean transcript
-      if (lines.length) { turns = new Map(); lines = []; logEl.innerHTML = ""; copyBtn.disabled = saveBtn.disabled = true; }
+      if (lines.length) { turns = new Map(); lines = []; logEl.innerHTML = ""; logEl.appendChild(emptyEl); copyBtn.disabled = saveBtn.disabled = true; }
       startCall();
     } else if (phase === "live") endCall();
   });
 
   // ---------- boot ----------
-  // A plain 25 fps timer (not requestAnimationFrame) so the voice line also runs in embedded or background views.
+  // A plain 25 fps timer (not requestAnimationFrame) so the building also runs in embedded or background views.
   fitCanvas(); setInterval(() => draw(performance.now()), 40); render();
   codeInput.value = sessionStorage.getItem("pooja-code") || "";
   fetch("/api/config").then((r) => r.json()).then((c) => {
