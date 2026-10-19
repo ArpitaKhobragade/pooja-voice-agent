@@ -2,211 +2,227 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#ecebf8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#06161d">
 <title>Pooja | HostelPGDekho voice agent</title>
 <meta name="description" content="Talk to Pooja, HostelPGDekho's calling assistant, and read the conversation as it happens.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff3d9a'/%3E%3Cpath d='M6 14 16 6l10 8v12H6z' fill='%2317143f'/%3E%3Crect x='10' y='15' width='4' height='5' rx='2' fill='%23ecebf8'/%3E%3Crect x='18' y='15' width='4' height='5' rx='2' fill='%23ecebf8'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2306161d'/%3E%3Crect x='7' y='11' width='8' height='15' rx='1.5' fill='%2383b5b8'/%3E%3Crect x='16' y='6' width='9' height='20' rx='1.5' fill='%23ffc25c'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* Two inks on paper. Where they overlap (you talking over Pooja) they print purple. */
   :root {
-    --paper: #ecebf8;
-    --paper-deep: #dedcf0;
-    --ink: #17143f;
-    --ink-soft: #55527a;
-    --line: #c9c6e6;
-    --pink: #ff3d9a;
-    --blue: #2260f0;
-    --window-off: #d3d0ec;
-    --both: #8e3bef;
-    --focus: #2260f0;
-    --blend: multiply;
-    --grain-opacity: .22;
-    --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
-    --body: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #100f33;
-      --paper-deep: #1a1948;
-      --ink: #f1efff;
-      --ink-soft: #a9a6d6;
-      --line: #2c2a63;
-      --pink: #ff5fb0;
-      --blue: #5b8dff;
-      --window-off: #25235a;
-      --both: #d9a6ff;
-      --focus: #9db9ff;
-      --blend: screen;
-      --grain-opacity: .12;
-    }
+    color-scheme: dark;
+    --bg-top: #04111a;
+    --bg-mid: #0a2530;
+    --bg-bot: #0f3a46;
+    --ink: #e8f3f1;
+    --ink-soft: #8eb3b5;
+    --line: rgba(170, 225, 225, .16);
+    --panel: rgba(255, 255, 255, .045);
+    --pooja: #ffc25c;
+    --you: #5ee6c9;
+    --rose: #ff7b7b;
+    --sky-h: clamp(190px, 31vh, 320px);
+    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: "Manrope", "Segoe UI", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
-  html { background: var(--paper); }
+  html { background: var(--bg-top); -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; min-height: 100vh; color: var(--ink); background: var(--paper);
-    font: 17px/1.5 var(--body); -webkit-font-smoothing: antialiased;
+    margin: 0; min-height: 100vh; min-height: 100dvh; color: var(--ink);
+    font: 16.5px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 62%, var(--bg-bot) 100%) fixed;
   }
-  /* print grain */
-  body::before {
-    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
-    opacity: var(--grain-opacity); mix-blend-mode: var(--blend);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35  0 0 0 0 .32  0 0 0 0 .6  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  body::before { /* a soft glow behind the headline */
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(60% 50% at 18% 12%, rgba(94, 230, 201, .10), transparent 70%),
+                radial-gradient(50% 45% at 85% 8%, rgba(255, 194, 92, .08), transparent 70%);
   }
-  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
+  :focus-visible { outline: 2px solid var(--pooja); outline-offset: 3px; border-radius: 8px; }
+  button { -webkit-tap-highlight-color: transparent; font-family: inherit; }
 
-  .shell { max-width: 1240px; margin: 0 auto; padding: 22px 28px 28px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .mark { display: flex; align-items: center; gap: 10px; font: 700 1rem var(--display); letter-spacing: -.01em; }
-  .mark svg { width: 30px; height: 30px; flex: none; }
-  .hint { margin: 0; color: var(--ink-soft); font-size: .9rem; }
+  .shell { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 22px 36px calc(var(--sky-h) + 16px); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; gap: 18px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .mark { display: flex; align-items: center; gap: 11px; }
+  .mark svg { width: 28px; height: 28px; flex: none; }
+  .mark b { font: 400 1.5rem/1 var(--serif); letter-spacing: .01em; }
+  .mark span { color: var(--ink-soft); font-size: .92rem; }
+  .hint { margin: 0; color: var(--ink-soft); font-size: .88rem; }
 
-  .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 0; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: start; }
 
-  /* ---------- left: the call ---------- */
-  .call { padding: 14px 40px 20px 0; display: flex; flex-direction: column; gap: 22px; }
-  @media (max-width: 900px) { .call { padding-right: 0; } }
-  h1 {
-    font: 900 clamp(2.6rem, 6.4vw, 4.9rem)/.94 var(--display); letter-spacing: -.045em; margin: 0;
-    text-shadow: .045em .045em 0 var(--pink);
+  /* ---------- the call ---------- */
+  .call { display: flex; flex-direction: column; gap: 20px; padding-top: 6px; }
+  h1 { font: 400 clamp(3rem, 6.6vw, 5.6rem)/.96 var(--serif); letter-spacing: -.02em; margin: 0; }
+  .lede { margin: 14px 0 0; max-width: 40ch; color: var(--ink-soft); font-size: 1.06rem; }
+
+  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: .86rem; color: var(--ink-soft); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: 0; box-shadow: 0 0 10px 1px currentColor; }
+  .legend .p i { color: var(--pooja); background: var(--pooja); }
+  .legend .o i { color: var(--you); background: var(--you); }
+  .legend .b i { color: #fff; background: #fff; }
+
+  .dock { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .cta {
+    appearance: none; border: 0; cursor: pointer; flex: none;
+    display: inline-flex; align-items: center; gap: 12px; height: 58px; padding: 0 30px 0 24px; border-radius: 999px;
+    font: 700 1rem var(--sans); letter-spacing: .005em; color: #2b1a00;
+    background: linear-gradient(180deg, #ffd98a, #ffb347);
+    box-shadow: 0 14px 34px -12px rgba(255, 179, 71, .7), inset 0 1px 0 rgba(255, 255, 255, .55);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s;
   }
-  .lede { margin: 0; max-width: 38ch; color: var(--ink-soft); font-size: 1.04rem; }
+  .cta:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 18px 40px -12px rgba(255, 179, 71, .8), inset 0 1px 0 rgba(255, 255, 255, .55); }
+  .cta:active:not(:disabled) { transform: translateY(0); }
+  .cta:disabled { opacity: .6; cursor: not-allowed; }
+  .cta svg { width: 20px; height: 20px; flex: none; }
+  .cta .i-stop { display: none; }
+  .cta.live { color: #2c0a0a; background: linear-gradient(180deg, #ffa398, #ff6f6f); box-shadow: 0 14px 34px -12px rgba(255, 111, 111, .7), inset 0 1px 0 rgba(255, 255, 255, .5); }
+  .cta.live .i-mic { display: none; }
+  .cta.live .i-stop { display: block; }
 
-  .stage { position: relative; display: grid; grid-template-columns: minmax(0, 290px) minmax(190px, 1fr); gap: 22px; align-items: end; }
-  .building { width: 100%; max-width: 330px; aspect-ratio: 1 / 1.02; display: block; }
-  .stage-side { display: flex; flex-direction: column; gap: 18px; align-items: flex-start; padding-bottom: 8px; }
-  /* phone: keep the building small and the main button on the first screen */
-  @media (max-width: 560px) {
-    .shell { padding: 16px 18px 24px; }
-    .stage { grid-template-columns: 138px minmax(0, 1fr); gap: 16px; align-items: center; }
-    .building { max-width: 138px; }
-    .stage-side { gap: 10px; padding-bottom: 0; }
-    .legend { font-size: .78rem; gap: 3px; }
-    .legend i { width: 11px; height: 11px; margin-right: 7px; }
-    .status { font-size: .82rem; }
-    .lede { font-size: .97rem; }
-    .call { gap: 16px; }
-    .hint { display: none; }
-  }
+  .status { display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); font: 600 .9rem/1 var(--sans); min-height: 40px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #5f7f84; flex: none; transition: background .2s, box-shadow .2s; }
+  .status[data-state="listening"] .dot { background: var(--you); box-shadow: 0 0 12px 2px rgba(94, 230, 201, .7); }
+  .status[data-state="speaking"] .dot { background: var(--pooja); box-shadow: 0 0 12px 2px rgba(255, 194, 92, .75); }
+  .status[data-state="thinking"] .dot, .status[data-state="connecting"] .dot { background: #9fc4c6; }
+  .status[data-state="error"] .dot { background: var(--rose); box-shadow: 0 0 12px 2px rgba(255, 123, 123, .6); }
+  .status[data-state="listening"] .dot, .status[data-state="speaking"] .dot { animation: breathe 1.5s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scale(1.35); opacity: .7; } }
+  @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
+  .clock { color: var(--ink-soft); font-weight: 500; font-variant-numeric: tabular-nums; padding-left: 10px; border-left: 1px solid var(--line); }
+  .clock:empty { display: none; }
 
-  .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; font-size: .9rem; color: var(--ink-soft); }
-  .legend i { display: inline-block; width: 13px; height: 13px; margin-right: 9px; vertical-align: -2px; border: 1.5px solid var(--ink); }
-  .legend .p i { background: var(--pink); }
-  .legend .o i { background: var(--blue); }
-  .legend .b i { background: var(--both); }
-
-  .status { display: flex; align-items: center; gap: 11px; font: 700 .92rem/1.25 var(--display); letter-spacing: -.01em; min-height: 1.6em; }
-  .sq { width: 13px; height: 13px; border: 1.5px solid var(--ink); background: var(--window-off); flex: none; transform: rotate(45deg); transition: background .2s; }
-  .status[data-state="listening"] .sq { background: var(--blue); }
-  .status[data-state="speaking"] .sq { background: var(--pink); }
-  .status[data-state="thinking"] .sq { background: var(--ink-soft); }
-  .status[data-state="connecting"] .sq { background: var(--ink-soft); }
-  .status[data-state="error"] .sq { background: var(--pink); }
-  .status[data-state="listening"] .sq, .status[data-state="speaking"] .sq { animation: tick 1.3s ease-in-out infinite; }
-  @keyframes tick { 50% { transform: rotate(45deg) scale(1.35); } }
-  @media (prefers-reduced-motion: reduce) { .sq { animation: none !important; } }
-
-  /* the stamp */
-  .stamp {
-    appearance: none; cursor: pointer; flex: none;
-    width: 142px; height: 142px; border-radius: 50%;
-    border: 3px solid var(--ink); background: var(--pink); color: #17143f;
-    font: 900 1.12rem/1.05 var(--display); letter-spacing: -.02em; text-align: center;
-    box-shadow: 7px 7px 0 var(--blue);
-    transform: rotate(-5deg); transition: transform .12s ease, box-shadow .12s ease, background .15s;
-    display: grid; place-items: center; padding: 0;
-  }
-  .stamp:hover:not(:disabled) { transform: rotate(-2deg) translate(-1px, -1px); box-shadow: 9px 9px 0 var(--blue); }
-  .stamp:active:not(:disabled) { transform: rotate(-2deg) translate(5px, 5px); box-shadow: 2px 2px 0 var(--blue); }
-  .stamp:disabled { opacity: .6; cursor: not-allowed; }
-  .stamp.live { background: var(--blue); color: #fff; box-shadow: 7px 7px 0 var(--pink); }
-  .stamp.live:hover:not(:disabled) { box-shadow: 9px 9px 0 var(--pink); }
-  .stamp.live:active:not(:disabled) { box-shadow: 2px 2px 0 var(--pink); }
-  @media (prefers-color-scheme: dark) { .stamp { color: #17143f; } .stamp.live { color: #0b0a28; } }
-  /* declared after the base stamp rules so it wins on phones */
-  @media (max-width: 560px) {
-    .stamp { width: 112px; height: 112px; font-size: .95rem; box-shadow: 5px 5px 0 var(--blue); }
-    .stamp:hover:not(:disabled) { box-shadow: 6px 6px 0 var(--blue); }
-    .stamp.live, .stamp.live:hover:not(:disabled) { box-shadow: 5px 5px 0 var(--pink); }
-  }
-
-  .banner { display: none; border: 2px solid var(--ink); background: color-mix(in srgb, var(--pink) 18%, var(--paper)); padding: 11px 14px; font-size: .95rem; box-shadow: 4px 4px 0 var(--ink); max-width: 46ch; }
+  .banner { display: none; border: 1px solid var(--line); border-left: 3px solid var(--rose); background: var(--panel); border-radius: 12px; padding: 12px 16px; font-size: .94rem; max-width: 52ch; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
   .banner.show { display: block; }
-  .banner.info { background: color-mix(in srgb, var(--blue) 14%, var(--paper)); }
+  .banner.info { border-left-color: var(--you); }
 
-  .code { display: none; flex-direction: column; gap: 4px; max-width: 280px; }
+  .code { display: none; flex-direction: column; gap: 6px; max-width: 320px; }
   .code.show { display: flex; }
-  .code label { font: 700 .8rem var(--display); }
-  .code input { font: inherit; padding: 8px 2px; border: 0; border-bottom: 2.5px solid var(--ink); background: transparent; color: var(--ink); border-radius: 0; }
-  .code input::placeholder { color: var(--ink-soft); }
+  .code label { font-weight: 600; font-size: .85rem; color: var(--ink-soft); }
+  .code input { font: 1rem var(--sans); padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); }
+  .code input::placeholder { color: #5f8286; }
+  .code input:focus { outline: none; border-color: var(--pooja); box-shadow: 0 0 0 3px rgba(255, 194, 92, .18); }
 
-  .fine { font-size: .84rem; color: var(--ink-soft); margin: 0; max-width: 46ch; }
+  .fine { font-size: .82rem; color: #6f9396; margin: 0; max-width: 52ch; }
 
-  /* ---------- right: the register ---------- */
-  .register { border-left: 2.5px solid var(--ink); padding-left: 40px; display: flex; flex-direction: column; min-height: 520px; max-height: calc(100vh - 100px); position: sticky; top: 16px; align-self: start; height: calc(100vh - 100px); }
-  @media (max-width: 900px) { .register { border-left: 0; border-top: 2.5px solid var(--ink); padding-left: 0; padding-top: 22px; margin-top: 26px; position: static; height: auto; max-height: none; min-height: 380px; } }
-  .r-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0 14px; }
-  .r-head h2 { font: 900 1.45rem/1 var(--display); letter-spacing: -.035em; margin: 0; }
-  .tools { display: flex; gap: 10px; }
-  .tool { appearance: none; cursor: pointer; font: 600 .86rem var(--body); color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: 999px; padding: 6px 15px; box-shadow: 3px 3px 0 var(--ink); transition: transform .1s, box-shadow .1s; }
-  .tool:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
-  .tool:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
-  .tool:disabled { opacity: .45; cursor: not-allowed; box-shadow: 3px 3px 0 var(--line); border-color: var(--line); }
+  /* ---------- the transcript ---------- */
+  .register {
+    display: flex; flex-direction: column; border-radius: 24px; padding: 20px 8px 8px 24px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .025));
+    border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .6);
+    backdrop-filter: blur(16px) saturate(120%); -webkit-backdrop-filter: blur(16px) saturate(120%);
+    height: calc(100vh - var(--sky-h) - 108px); height: calc(100dvh - var(--sky-h) - 108px); min-height: 360px;
+  }
+  .r-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px 14px 0; }
+  .r-head h2 { font: 400 1.7rem/1 var(--serif); margin: 0; letter-spacing: .005em; }
+  .tools { display: flex; gap: 8px; }
+  .tool { appearance: none; cursor: pointer; font: 600 .82rem var(--sans); color: var(--ink); background: rgba(255, 255, 255, .06); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; transition: background .15s, border-color .15s; }
+  .tool:hover:not(:disabled) { background: rgba(255, 255, 255, .11); border-color: rgba(170, 225, 225, .3); }
+  .tool:disabled { opacity: .4; cursor: not-allowed; }
 
-  .log { list-style: none; margin: 0; padding: 0 8px 20px 0; overflow-y: auto; flex: 1; scroll-behavior: smooth; border-top: 1.5px solid var(--line); }
+  .log { list-style: none; margin: 0; padding: 0 16px 14px 0; overflow-y: auto; flex: 1; scroll-behavior: smooth; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(170, 225, 225, .25) transparent; }
   @media (prefers-reduced-motion: reduce) { .log { scroll-behavior: auto; } }
-  .empty { padding: 26px 0; color: var(--ink-soft); max-width: 34ch; }
-  .turn { display: grid; grid-template-columns: 50px 1fr; gap: 14px; padding: 15px 0; border-bottom: 1.5px solid var(--line); }
-  .time { font-size: .8rem; color: var(--ink-soft); padding-top: 3px; font-variant-numeric: tabular-nums; }
-  .who { font: 700 .78rem/1 var(--display); letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .who::before { content: ""; width: 11px; height: 11px; border: 1.5px solid var(--ink); background: var(--pink); }
-  .owner .who::before { background: var(--blue); }
-  .text { margin: 0; font-size: 1.06rem; line-height: 1.62; max-width: 58ch; overflow-wrap: anywhere; }
-  .hl { background: linear-gradient(transparent 54%, color-mix(in srgb, var(--pink) 34%, transparent) 54%); -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 0 2px; }
-  .owner .hl { background: linear-gradient(transparent 54%, color-mix(in srgb, var(--blue) 30%, transparent) 54%); }
-  .cut { margin-left: 4px; font: 600 .74rem var(--body); color: var(--ink); background: color-mix(in srgb, var(--both) 38%, var(--paper)); padding: 2px 8px; border-radius: 99px; }
-  .note { margin: 18px 0 6px; padding-left: 64px; }
-  .note span { display: inline-block; font: 700 .76rem var(--display); letter-spacing: -.01em; border: 2px solid var(--ink); padding: 6px 12px; transform: rotate(-1.5deg); background: var(--paper); box-shadow: 3px 3px 0 var(--blue); }
-  .note.bad span { box-shadow: 3px 3px 0 var(--pink); }
+  .empty { padding: 18px 0; color: var(--ink-soft); max-width: 36ch; }
+  .turn { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 14px 0 14px 16px; animation: rise .28s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .turn { animation: none; } }
+  .turn::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; border-radius: 2px; background: var(--pooja); box-shadow: 0 0 10px rgba(255, 194, 92, .5); }
+  .turn.owner::before { background: var(--you); box-shadow: 0 0 10px rgba(94, 230, 201, .5); }
+  .time { font-size: .78rem; color: #6f9396; padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .who { font: 700 .74rem/1 var(--sans); letter-spacing: .04em; color: var(--pooja); display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 7px; }
+  .owner .who { color: var(--you); }
+  .text { margin: 0; font-size: 1.04rem; line-height: 1.6; max-width: 60ch; overflow-wrap: anywhere; }
+  .cut { font: 600 .7rem var(--sans); letter-spacing: 0; color: var(--ink); background: rgba(255, 255, 255, .12); padding: 3px 9px; border-radius: 99px; }
+  .note { display: flex; align-items: center; gap: 12px; margin: 14px 0; color: var(--ink-soft); font-size: .8rem; font-weight: 600; }
+  .note::before, .note::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+  .note.good { color: var(--you); }
+  .note.bad { color: var(--rose); }
+
+  /* ---------- the skyline: every window is part of the voice meter ---------- */
+  .skyline { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: var(--sky-h); z-index: 0; pointer-events: none; display: block; }
+
+  /* ---------- tablets and phones ---------- */
+  @media (max-width: 900px) {
+    .shell { padding: 14px 16px 118px; gap: 12px; }
+    .hint { display: none; }
+    .mark span { display: none; }
+    .grid { grid-template-columns: 1fr; gap: 18px; }
+    /* the skyline becomes a full-width band under the header */
+    .skyline { position: relative; left: auto; right: auto; bottom: auto; height: 190px; width: calc(100% + 32px); margin: 0 -16px; order: 0; }
+    :root { --sky-h: 0px; }
+    h1 { font-size: clamp(2.7rem, 13vw, 3.7rem); }
+    .lede { font-size: 1rem; margin-top: 10px; }
+    .call { gap: 14px; padding-top: 0; }
+    .legend { font-size: .8rem; gap: 4px 16px; }
+
+    .dock {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; gap: 12px; flex-wrap: nowrap;
+      justify-content: space-between;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(6, 22, 29, .82); border-top: 1px solid var(--line);
+      backdrop-filter: blur(18px) saturate(130%); -webkit-backdrop-filter: blur(18px) saturate(130%);
+    }
+    .status { padding: 8px 13px; font-size: .84rem; min-width: 0; }
+    .cta { height: 54px; padding: 0 24px 0 20px; flex: none; }
+
+    .register { height: auto; min-height: 0; max-height: none; padding: 16px 6px 6px 18px; border-radius: 22px; box-shadow: none; }
+    .log { max-height: 44vh; max-height: 44dvh; min-height: 170px; }
+    .turn { grid-template-columns: 38px 1fr; gap: 8px; padding-left: 14px; }
+    .text { font-size: 1.01rem; }
+    /* during a call, fold away the intro so the skyline and the transcript share the screen */
+    body.live .lede, body.live .fine { display: none; }
+    body.live .log { max-height: 36vh; max-height: 36dvh; }
+    body.live .shell { gap: 8px; }
+  }
+  @media (max-width: 400px) {
+    .shell { padding-left: 12px; padding-right: 12px; }
+    .skyline { width: calc(100% + 24px); margin: 0 -12px; }
+    .cta { padding: 0 18px 0 16px; gap: 9px; }
+    .dock { padding-left: 12px; padding-right: 12px; }
+  }
 </style>
 </head>
 <body>
 <div class="shell">
   <header>
     <div class="mark">
-      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--pink)" stroke="var(--ink)" stroke-width="2"/><path d="M6 14 16 6l10 8v12H6z" fill="var(--ink)"/><rect x="10" y="15" width="4" height="5" rx="2" fill="var(--paper)"/><rect x="18" y="15" width="4" height="5" rx="2" fill="var(--paper)"/></svg>
-      <span>Pooja for HostelPGDekho</span>
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0a2530"/><rect x="7" y="11" width="8" height="15" rx="1.5" fill="#83b5b8"/><rect x="16" y="6" width="9" height="20" rx="1.5" fill="#ffc25c"/><rect x="18.5" y="10" width="1.6" height="2.6" fill="#0a2530"/><rect x="21.5" y="10" width="1.6" height="2.6" fill="#0a2530"/><rect x="18.5" y="15" width="1.6" height="2.6" fill="#0a2530"/><rect x="21.5" y="15" width="1.6" height="2.6" fill="#0a2530"/></svg>
+      <b>Pooja</b><span>for HostelPGDekho</span>
     </div>
     <p class="hint">Works best in Chrome or Edge. Headphones keep the conversation clean.</p>
   </header>
 
+  <canvas id="wave" class="skyline" role="img" aria-label="A night skyline whose windows light up as Pooja or you speak"></canvas>
+
   <main class="grid">
     <section class="call" aria-labelledby="title">
-      <h1 id="title">Talk to Pooja.</h1>
-      <p class="lede">Pooja phones PG owners about HostelPGDekho. Press start, allow your microphone, and answer the way an owner would. Interrupt her whenever you like.</p>
-
-      <div class="stage">
-        <canvas id="wave" class="building" role="img" aria-label="A PG building whose windows light up as Pooja or you speak"></canvas>
-        <div class="stage-side">
-          <ul class="legend" aria-hidden="true">
-            <li class="p"><i></i>Pooja talking</li>
-            <li class="o"><i></i>You talking</li>
-            <li class="b"><i></i>Both at once</li>
-          </ul>
-          <div class="status" id="status" data-state="idle" role="status" aria-live="polite"><span class="sq"></span><span id="statusText">Ready when you are</span></div>
-          <button class="stamp" id="callBtn" type="button">Start call</button>
-        </div>
+      <div class="hero">
+        <h1 id="title">Talk to Pooja</h1>
+        <p class="lede">Pooja phones PG owners about HostelPGDekho. Press start, allow your microphone, and answer the way an owner would. Interrupt her whenever you like.</p>
       </div>
+
+      <ul class="legend" aria-hidden="true">
+        <li class="p"><i></i>Pooja speaking</li>
+        <li class="o"><i></i>You speaking</li>
+        <li class="b"><i></i>Both at once</li>
+      </ul>
 
       <div class="banner" id="banner" role="alert"></div>
 
       <div class="code" id="codeBox">
         <label for="code">Access code</label>
         <input id="code" type="password" autocomplete="off" placeholder="Enter the code you were given">
+      </div>
+
+      <div class="dock" id="dock">
+        <button class="cta" id="callBtn" type="button">
+          <svg class="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+          <svg class="i-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>
+          <span id="ctaText">Start call</span>
+        </button>
+        <div class="status" id="status" data-state="idle" role="status" aria-live="polite"><span class="dot"></span><span id="statusText">Ready when you are</span><span class="clock" id="clock" aria-hidden="true"></span></div>
       </div>
 
       <p class="fine">Your voice goes to speech-recognition and AI services so Pooja can reply. Nothing is recorded on this page. Use Download to keep the transcript.</p>
@@ -221,7 +237,7 @@
         </div>
       </div>
       <ol class="log" id="log" role="log" aria-live="polite" aria-label="Conversation transcript">
-        <li class="empty" id="empty">Every line of the call lands here with its time. Pooja is marked in pink, you in blue.</li>
+        <li class="empty" id="empty">Every line of the call lands here with its time. Pooja is marked in amber, you in aqua.</li>
       </ol>
     </section>
   </main>
@@ -233,7 +249,7 @@
 
   // ---------- elements ----------
   const $ = (id) => document.getElementById(id);
-  const callBtn = $("callBtn"), statusEl = $("status"), statusText = $("statusText"), banner = $("banner");
+  const callBtn = $("callBtn"), ctaText = $("ctaText"), statusEl = $("status"), statusText = $("statusText"), clockEl = $("clock"), banner = $("banner");
   const logEl = $("log"), emptyEl = $("empty"), copyBtn = $("copyBtn"), saveBtn = $("saveBtn");
   const codeBox = $("codeBox"), codeInput = $("code"), canvas = $("wave");
 
@@ -241,6 +257,7 @@
   let ws = null, ctx = null, micStream = null, workletNode = null, playGain = null, analyser = null;
   let phase = "idle";            // idle | connecting | live | ending
   let callStarted = false;       // true once the server says "ready" for this call
+  let liveSince = 0;             // when this call became live (for the timer)
   let playhead = 0, sources = new Set();
   let micLevel = 0, poojaLevel = 0, shownOwner = 0, shownPooja = 0;
   let turns = new Map();         // "speaker:turn" -> {li, text, cut}
@@ -259,9 +276,7 @@
     emptyEl.remove();
     const li = document.createElement("li");
     li.className = "note " + (kind || "");
-    const span = document.createElement("span");
-    span.textContent = text;
-    li.appendChild(span);
+    li.textContent = text;
     logEl.appendChild(li);
     logEl.scrollTop = logEl.scrollHeight;
   }
@@ -279,21 +294,18 @@
       const body = document.createElement("div");
       const who = document.createElement("div");
       who.className = "who";
-      who.textContent = speaker === "pooja" ? "Pooja" : "You";
+      who.textContent = speaker === "pooja" ? "POOJA" : "YOU";
       const p = document.createElement("p");
       p.className = "text";
-      const hl = document.createElement("span");
-      hl.className = "hl";
-      p.appendChild(hl);
       body.append(who, p);
       li.append(time, body);
       logEl.appendChild(li);
-      entry = { li, hl, who, text: "", cut: false };
+      entry = { li, p, who, text: "", cut: false };
       turns.set(key, entry);
       lines.push({ t: t || 0, who: speaker === "pooja" ? "Pooja" : "Owner", entry });
     }
     entry.text = entry.text ? entry.text + " " + text : text;
-    entry.hl.textContent = entry.text;
+    entry.p.textContent = entry.text;
     logEl.scrollTop = logEl.scrollHeight;
     copyBtn.disabled = saveBtn.disabled = false;
   }
@@ -364,34 +376,50 @@
     playhead = 0;
   }
 
-  // ---------- the building: windows are the voice meter ----------
+  // ---------- the skyline ----------
   const g = canvas.getContext("2d");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const COLS = 4, ROWS = 4;
-  // a fixed shuffled order, so windows light in a stable, organic pattern
-  const rank = (() => {
-    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const idx = Array.from({ length: COLS * ROWS }, (_, i) => i);
-    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-    const r = []; idx.forEach((win, order) => (r[win] = (order + 0.5) / idx.length)); return r;
-  })();
+  const POOJA = [255, 194, 92], YOU = [94, 230, 201], HAZE = [170, 225, 225];
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  let city = null;
+
+  function buildCity(W, H) {
+    let seed = 23; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const s = W < 560 ? 0.72 : 1;
+    const buildings = [], wins = [];
+    let x = -8 * s;
+    while (x < W) {
+      const w = (46 + rnd() * 62) * s, h = H * (0.36 + rnd() * 0.56);
+      const kind = rnd() < 0.26 ? "step" : rnd() < 0.42 ? "antenna" : "flat";
+      const b = { x, w, h, top: H - h, kind, s };
+      buildings.push(b);
+      const cell = 12 * s, rowH = cell * 1.3, ww = 5 * s, wh = 7.5 * s;
+      const cols = Math.max(1, Math.floor((w - 10 * s) / cell)), rows = Math.max(1, Math.floor((h - 18 * s) / rowH));
+      const ox = x + (w - cols * cell) / 2 + (cell - ww) / 2;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (rnd() < 0.12) continue;
+        wins.push({ x: ox + c * cell, y: b.top + 12 * s + r * rowH, w: ww, h: wh, rk: rnd(), ph: rnd() * 6.28 });
+      }
+      x += w + (2 + rnd() * 8) * s;
+    }
+    const stars = Array.from({ length: Math.round(W / 14) }, () => ({ x: rnd() * W, y: rnd() * H * 0.5, r: 0.5 + rnd() * 0.9, ph: rnd() * 6.28 }));
+    city = { W, H, s, buildings, wins, stars };
+  }
 
   function fitCanvas() {
-    const r = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    const r = canvas.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(r.width * d); canvas.height = Math.round(r.height * d);
     g.setTransform(d, 0, 0, d, 0, 0);
+    city = null;
   }
   window.addEventListener("resize", fitCanvas);
 
-  function arch(x, y, w, h) {
-    g.beginPath();
-    if (g.roundRect) g.roundRect(x, y, w, h, [w / 2, w / 2, 3, 3]); else g.rect(x, y, w, h);
-  }
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
   function draw(now) {
     const W = canvas.clientWidth, H = canvas.clientHeight;
     if (!W || !H) return;
+    if (!city || city.W !== W || city.H !== H) buildCity(W, H);
     if (analyser) {
       const data = new Uint8Array(analyser.fftSize);
       analyser.getByteTimeDomainData(data);
@@ -403,58 +431,50 @@
     shownPooja += (poojaLevel - shownPooja) * 0.3;
     micLevel *= 0.88;
 
-    const bothInk = css("--both"), ink = css("--ink"), pink = css("--pink"), blue = css("--blue"), off = css("--window-off"), paper = css("--paper-deep"), blend = css("--blend") || "multiply";
-    g.clearRect(0, 0, W, H);
-
-    // geometry
-    const m = W * 0.1, bx = m, bw = W - m * 2, roofTop = H * 0.05, bodyTop = H * 0.21, ground = H * 0.94;
-    const cx = bx + bw / 2, groundH = H * 0.16;
-    const pathBuilding = () => {
-      g.beginPath();
-      g.moveTo(bx - bw * 0.05, bodyTop); g.lineTo(cx, roofTop); g.lineTo(bx + bw + bw * 0.05, bodyTop);
-      g.lineTo(bx + bw, bodyTop); g.lineTo(bx + bw, ground); g.lineTo(bx, ground); g.lineTo(bx, bodyTop); g.closePath();
-    };
-
-    // misprinted shadow plate
-    g.save(); g.translate(W * 0.03, W * 0.03); pathBuilding(); g.fillStyle = blue; g.fill(); g.restore();
-    // wall
-    pathBuilding(); g.fillStyle = paper; g.fill(); g.lineWidth = 3; g.strokeStyle = ink; g.lineJoin = "round"; g.stroke();
-    // roof line
-    g.beginPath(); g.moveTo(bx - bw * 0.05, bodyTop); g.lineTo(bx + bw + bw * 0.05, bodyTop); g.lineWidth = 3; g.stroke();
-
-    // door
-    const dw = bw * 0.2, dh = groundH * 0.95;
-    arch(cx - dw / 2, ground - dh, dw, dh); g.fillStyle = ink; g.fill();
-
-    // windows
-    const padX = bw * 0.09, top = bodyTop + (ground - groundH - bodyTop) * 0.09;
-    const cw = (bw - padX * 2) / COLS, ch = (ground - groundH - top) / ROWS;
-    const ww = cw * 0.52, wh = ch * 0.62;
-    const ambient = reduceMotion ? 0.06 : 0.07 + 0.05 * Math.sin(now / 1500);
+    const ambient = reduceMotion ? 0.05 : 0.06 + 0.04 * Math.sin(now / 1800);
     const lp = Math.max(shownPooja, phase === "idle" ? ambient : 0) * 1.25;
     const lo = shownOwner * 1.25;
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const i = r * COLS + c, rk = rank[i];
-        const x = bx + padX + c * cw + (cw - ww) / 2, y = top + r * ch + (ch - wh) / 2;
-        const flick = reduceMotion ? 0 : 0.07 * Math.sin(now / 120 + i * 2.1);
-        arch(x, y, ww, wh); g.fillStyle = off; g.fill();
-        g.save();
-        arch(x, y, ww, wh); g.clip();
-        g.globalCompositeOperation = blend;
-        const pa = Math.max(0, Math.min(1, (lp - rk) * 5 + flick));
-        const oa = Math.max(0, Math.min(1, (lo - (1 - rk)) * 5 + flick));
-        if (pa > 0.02) { g.globalAlpha = pa; g.fillStyle = pink; g.fillRect(x, y, ww, wh); }
-        if (oa > 0.02) { g.globalAlpha = oa; g.fillStyle = blue; g.fillRect(x, y, ww, wh); }
-        // both inks on one window (you talking over Pooja): overprint purple
-        const both = Math.min(pa, oa);
-        if (both > 0.02) { g.globalCompositeOperation = "source-over"; g.globalAlpha = both; g.fillStyle = bothInk; g.fillRect(x, y, ww, wh); }
-        g.restore();
-        arch(x, y, ww, wh); g.lineWidth = 2; g.strokeStyle = ink; g.stroke();
-        // window cross bar
-        g.beginPath(); g.moveTo(x + ww / 2, y + ww / 2); g.lineTo(x + ww / 2, y + wh); g.lineWidth = 1.2; g.stroke();
+    const { s } = city;
+    g.clearRect(0, 0, W, H);
+
+    // stars and a thin moon
+    for (const st of city.stars) {
+      const a = 0.22 + (reduceMotion ? 0.15 : 0.18 * (0.5 + 0.5 * Math.sin(now / 1100 + st.ph)));
+      g.fillStyle = rgba([232, 243, 241], a); g.beginPath(); g.arc(st.x, st.y, st.r, 0, 6.283); g.fill();
+    }
+    g.beginPath(); g.arc(W * 0.9, H * 0.16, 14 * s, 0, 6.283); g.fillStyle = "rgba(232,243,241,.06)"; g.fill();
+    g.lineWidth = 1; g.strokeStyle = "rgba(232,243,241,.35)"; g.stroke();
+
+    // buildings
+    g.lineWidth = 1;
+    for (const b of city.buildings) {
+      const grad = g.createLinearGradient(0, b.top, 0, H);
+      grad.addColorStop(0, "rgba(160,225,230,.10)"); grad.addColorStop(1, "rgba(160,225,230,.025)");
+      g.fillStyle = grad; g.strokeStyle = rgba(HAZE, 0.24);
+      g.beginPath(); g.rect(b.x + 0.5, b.top + 0.5, b.w, b.h + 2); g.fill(); g.stroke();
+      if (b.kind === "step") { g.beginPath(); g.rect(b.x + b.w * 0.2, b.top - 9 * s, b.w * 0.6, 9 * s + 1); g.fill(); g.stroke(); }
+      if (b.kind === "antenna") {
+        const ax = b.x + b.w * 0.5;
+        g.beginPath(); g.moveTo(ax, b.top); g.lineTo(ax, b.top - 18 * s); g.stroke();
+        const blink = reduceMotion ? 0.7 : 0.35 + 0.65 * Math.max(0, Math.sin(now / 700 + b.x));
+        g.fillStyle = `rgba(255,123,123,${blink})`; g.beginPath(); g.arc(ax, b.top - 19 * s, 1.8 * s, 0, 6.283); g.fill();
       }
     }
+
+    // windows
+    for (let i = 0; i < city.wins.length; i++) {
+      const w = city.wins[i];
+      g.fillStyle = rgba(HAZE, 0.09); g.fillRect(w.x, w.y, w.w, w.h);
+      const flick = reduceMotion ? 0 : 0.06 * Math.sin(now / 130 + w.ph);
+      const pa = clamp01((lp - w.rk) * 6 + flick);
+      const oa = clamp01((lo - (1 - w.rk)) * 6 + flick);
+      if (pa < 0.02 && oa < 0.02) continue;
+      g.globalCompositeOperation = "lighter"; // amber + aqua add up to white where they meet
+      if (pa > 0.02) { g.fillStyle = rgba(POOJA, pa); g.fillRect(w.x, w.y, w.w, w.h); g.fillStyle = rgba(POOJA, pa * 0.14); g.fillRect(w.x - 2, w.y - 2, w.w + 4, w.h + 4); }
+      if (oa > 0.02) { g.fillStyle = rgba(YOU, oa); g.fillRect(w.x, w.y, w.w, w.h); g.fillStyle = rgba(YOU, oa * 0.14); g.fillRect(w.x - 2, w.y - 2, w.w + 4, w.h + 4); }
+      g.globalCompositeOperation = "source-over";
+    }
+    if (phase === "live") clockEl.textContent = mmss((Date.now() - liveSince) / 1000);
   }
 
   // ---------- the call ----------
@@ -513,7 +533,11 @@
 
   function onEvent(m) {
     switch (m.type) {
-      case "ready": callStarted = true; phase = "live"; render(); setStatus("listening", "Listening"); if (!lines.length) addNote("Call started", ""); break;
+      case "ready":
+        callStarted = true; liveSince = Date.now(); phase = "live"; render(); setStatus("listening", "Listening");
+        document.body.classList.add("live"); window.scrollTo({ top: 0, behavior: "smooth" });
+        if (!lines.length) addNote("Call started", "");
+        break;
       case "status": {
         if (phase !== "live") break;
         const map = { listening: "Listening", thinking: "Thinking", speaking: "Pooja is speaking" };
@@ -567,13 +591,15 @@
     if (micStream) { micStream.getTracks().forEach((t) => t.stop()); micStream = null; }
     if (ctx) { try { ctx.close(); } catch {} ctx = null; analyser = null; playGain = null; }
     micLevel = poojaLevel = 0;
+    clockEl.textContent = "";
+    document.body.classList.remove("live");
     render(); setStatus(state, text);
   }
 
   function render() {
     callBtn.classList.toggle("live", phase === "live" || phase === "ending");
     callBtn.disabled = phase === "connecting" || phase === "ending";
-    callBtn.textContent = { idle: lines.length ? "Start new call" : "Start call", connecting: "Connecting", live: "End call", ending: "Ending" }[phase];
+    ctaText.textContent = { idle: lines.length ? "Start new call" : "Start call", connecting: "Connecting", live: "End call", ending: "Ending" }[phase];
   }
 
   callBtn.addEventListener("click", () => {
@@ -585,7 +611,7 @@
   });
 
   // ---------- boot ----------
-  // A plain 25 fps timer (not requestAnimationFrame) so the building also runs in embedded or background views.
+  // A plain 25 fps timer (not requestAnimationFrame) so the skyline also runs in embedded or background views.
   fitCanvas(); setInterval(() => draw(performance.now()), 40); render();
   codeInput.value = sessionStorage.getItem("pooja-code") || "";
   fetch("/api/config").then((r) => r.json()).then((c) => {
