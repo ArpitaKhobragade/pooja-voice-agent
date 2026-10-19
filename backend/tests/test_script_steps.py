@@ -106,11 +106,30 @@ class TestScriptIsFollowedVerbatim(unittest.TestCase):
         self.assertIn("platform", out[2])                            # LLM answer
         self.assertEqual(out[3], step_text(1))                       # script resumes at the next step
 
-    def test_a_step_the_llm_already_covered_is_not_repeated(self):
+    def test_an_answer_never_makes_the_script_skip_a_step(self):
         llm = FakeStreamLLM(["Humara smart search bahut owners tak inquiry pahunchata hai."])
         s, out = run(llm, ["haan ji", "ye kaise kaam karta hai?", "okay"])
-        self.assertNotIn(step_text(1), out)          # smart_search already covered by the LLM's answer
-        self.assertEqual(out[3], step_text(2))       # straight on to the Request Form
+        self.assertEqual(out[3], step_text(1))       # the smart-search step is still delivered in full
+
+    def test_confused_first_reply_gets_the_introduction_once(self):
+        llm = FakeStreamLLM()
+        _, out = run(llm, ["arey bhai kya bol rahi ho"])
+        self.assertEqual(llm.calls, [])
+        self.assertIn("Pooja bol rahi hoon", out[1])
+
+    def test_masculine_slips_are_made_feminine(self):
+        from pooja_cli import _feminize
+
+        self.assertEqual(_feminize("Bilkul, simple batata hoon. Main bata raha hoon, phir karunga."),
+                         "Bilkul, simple batati hoon. Main bata rahi hoon, phir karungi.")
+
+    def test_a_goodbye_wish_is_dropped_from_an_ordinary_answer(self):
+        from pooja_cli import _drop_stray_wish
+
+        out = list(_drop_stray_wish(["Listing free hai,", "Take care."], allow=False))
+        self.assertEqual(out, ["Listing free hai,"])
+        out = list(_drop_stray_wish(["Take care."], allow=True, goodbye=lambda: "Koi baat nahi. Dhanyavaad."))
+        self.assertEqual(out, ["Koi baat nahi. Dhanyavaad."])
 
     def test_hello_gets_a_short_reintroduction_not_the_pitch(self):
         llm = FakeStreamLLM()
@@ -163,7 +182,7 @@ class TestNoiseAndGreetings(unittest.TestCase):
         llm = FakeStreamLLM()
         _, out = run(llm, ["of"])
         self.assertEqual(llm.calls, [])
-        self.assertTrue(any("clear" in t or "bata dijiye" in t or "dobara" in t for t in out[1:]))
+        self.assertTrue(any("boliye" in t or "keh rahe" in t or "kat gayi" in t for t in out[1:]))
 
     def test_greeting_detection(self):
         for t in ("Hello", "hello ji", "namaste", "Hi"):

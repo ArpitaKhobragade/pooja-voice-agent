@@ -41,3 +41,51 @@ class TestPitch(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestWebCallEnding(unittest.TestCase):
+    def test_pooja_ending_the_call_waits_for_her_last_line_to_play(self):
+        import time
+
+        from local.web_call import WebCall
+
+        class Duplex:
+            closed = False
+
+            def __init__(self):
+                self.end = time.time() + 0.6
+
+            def buffered_seconds(self):
+                return max(0.0, self.end - time.time())
+
+        call = WebCall(lambda m: None, lambda b: None)
+        call.TAIL_S = 0.0
+        call.duplex = Duplex()
+        t0 = time.time()
+        call._let_speech_finish()
+        self.assertGreaterEqual(time.time() - t0, 0.5)
+
+    def test_a_user_stop_does_not_wait(self):
+        import time
+
+        from local.web_call import WebCall
+
+        class Duplex:
+            closed = False
+
+            def buffered_seconds(self):
+                return 5.0
+
+        call = WebCall(lambda m: None, lambda b: None)
+        call.duplex = Duplex()
+        call._stop_reason = "stopped"
+        t0 = time.time()
+        call._let_speech_finish()
+        self.assertLess(time.time() - t0, 0.2)
+
+    def test_greeting_and_wish_follow_the_callers_timezone(self):
+        import agent_config
+
+        agent_config.set_call_timezone("Europe/London")
+        self.assertIn(agent_config.greeting(), ("good morning", "good afternoon", "good evening", "namaste"))
+        agent_config.set_call_timezone("not/a-zone")  # ignored, never raises

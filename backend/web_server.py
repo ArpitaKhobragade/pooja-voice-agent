@@ -126,14 +126,17 @@ async def call_socket(ws: WebSocket):
             if not text:
                 continue
             try:
-                command = json.loads(text).get("type")
+                payload = json.loads(text)
+                command = payload.get("type")
             except (ValueError, AttributeError):
                 continue
             if command == "start" and call is None:
                 if not _acquire_slot():
                     emit_json({"type": "error", "message": "Pooja is on other calls right now. Try again in a minute."})
                     continue
-                call = WebCall(emit_json, emit_bytes, max_call_s=MAX_CALL_S, on_finished=_release_slot)
+                tz = payload.get("tz")
+                call = WebCall(emit_json, emit_bytes, max_call_s=MAX_CALL_S, on_finished=_release_slot,
+                               timezone=tz if isinstance(tz, str) and len(tz) < 64 else None)
                 call.start()
             elif command == "stop" and call is not None:
                 call.stop("stopped")

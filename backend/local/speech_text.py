@@ -20,7 +20,7 @@ _URL_RE =re.compile(r"https?://(?:www\.)?", re.IGNORECASE)
 # one smooth name ("hostel PG dekho") instead of "hostelpg ... dekho". Override in
 # .env (POOJA_BRAND_SPOKEN / POOJA_DOTCOM_SPOKEN) to try other spellings, e.g.
 # POOJA_BRAND_SPOKEN="Hostel PG Dekho".
-BRAND_SPOKEN = os.environ.get("POOJA_BRAND_SPOKEN", "होस्टल पीजी देखो")
+BRAND_SPOKEN = os.environ.get("POOJA_BRAND_SPOKEN", "होस्टलपीजीदेखो")  # one unspaced word: no pause before "dekho"
 DOTCOM_SPOKEN = os.environ.get("POOJA_DOTCOM_SPOKEN", "डॉट कॉम")
 SLASH_SPOKEN = os.environ.get("POOJA_SLASH_SPOKEN", "स्लैश")
 

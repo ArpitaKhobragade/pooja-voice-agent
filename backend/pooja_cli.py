@@ -35,7 +35,7 @@ from loguru import logger
 
 load_dotenv()
 
-from agent_config import AGENT_CONFIG, FINAL_STEP_TEXT, SCRIPT_STEPS, script_line  # noqa: E402
+from agent_config import AGENT_CONFIG, FINAL_STEP_TEXT, SCRIPT_STEPS, day_wish, script_line  # noqa: E402
 from local.reply_stream import END_MARKERS, reply_effects, stream_sentences  # noqa: E402
 from local.voice_gender import GenderTracker  # noqa: E402
 from conversation_manager import ConversationManager  # noqa: E402
@@ -64,11 +64,13 @@ TURN_REMINDER = (
     "Roman script only (no Devanagari), at most one question asked as a full polite sentence, "
     "nothing already said repeated, and no dhanyavaad/goodbye unless the call is ending now."
 )
-CANNED_REPROMPT = "Sorry Sir, main theek se samajh nahi payi. Kya aap ek baar phir bata sakte hain?"
+CANNED_REPROMPT = "Ji Sir, aap bataiye, main sun rahi hoon."
+# Said when the words did not come through. Like a person on a bad line: a light "go on",
+# never a flat "please repeat".
 UNCLEAR_PHRASES = [
-    "Sir, mujhe aapki awaaz clear nahi aayi, ek baar phir bolenge?",
-    "Maaf kijiye Sir, ek baar phir bata dijiye?",
-    "Sir, thoda clear nahi aaya, kya aap dobara bol sakte hain?",
+    "Ji Sir, boliye?",
+    "Haan ji, aap kuch keh rahe the?",
+    "Sorry Sir, line thodi kat gayi, aap boliye.",
 ]
 SILENCE_PHRASES = [
     "Hello Sir, kya aap line par hain?",
@@ -160,7 +162,7 @@ _YES_TOKENS = {
     "समझ", "सही", "यस", "इंटरेस्टेड",
     # Happy reactions ("Wow", "Great") are acknowledgements too, not noise.
     "wow", "wah", "waah", "great", "nice", "perfect", "superb", "awesome", "excellent", "badhiya",
-    "badiya", "shandar", "mast",
+    "badiya", "shandar", "mast", "vaah", "vah", "vaa", "waaah", "are", "arre", "arey",
 }
 _NO_TOKENS = {"nahi", "nahin", "nahi.", "no", "nope", "mat", "नहीं", "नही", "मत", "नो"}
 # "dobara batao" / "phir se samjhao": a request to explain again, not a "go ahead".
@@ -241,7 +243,42 @@ LEAD_INS = ["Ji.", "Achha.", "Haan ji.", "Ji bilkul.", "Theek hai."]
 # When the owner reacts warmly ("Wow", "Bahut achha"), Pooja answers the reaction before moving on.
 REACTIONS = ["Ji, shukriya!", "Haan ji, bilkul!", "Ji, mujhe bhi yehi lagta hai.", "Thank you ji!"]
 _REACTION_WORDS = {"wow", "wah", "waah", "great", "nice", "perfect", "superb", "awesome", "excellent",
-                   "badhiya", "badiya", "shandar", "mast", "bahut"}
+                   "badhiya", "badiya", "shandar", "mast", "bahut", "vaah", "vah", "vaa", "waaah"}
+
+
+_MASC_PRESENT = re.compile(r"\b([A-Za-z]{2,})ta hoon\b", re.IGNORECASE)
+_MASC_PROGRESSIVE = re.compile(r"\braha hoon\b", re.IGNORECASE)
+_MASC_FUTURE = re.compile(r"\b([A-Za-z]+)unga\b", re.IGNORECASE)
+
+
+def _feminize(text: str) -> str:
+    """The model occasionally slips into masculine Hindi for Pooja ("batata hoon", "karunga")."""
+    text = _MASC_PRESENT.sub(lambda m: m.group(1) + "ti hoon", text)
+    text = _MASC_PROGRESSIVE.sub("rahi hoon", text)
+    return _MASC_FUTURE.sub(lambda m: m.group(1) + "ungi", text)
+
+
+_STRAY_WISH = re.compile(r"[,.\s]*\b(take care|stay safe)\b[.!\s]*$", re.IGNORECASE)
+
+
+def _drop_stray_wish(sentences, allow: bool, goodbye=None):
+    """The model sometimes ends an ordinary answer with a goodbye wish ("take care"). While the
+    call is going on that sounds like hanging up, so it is removed. When the call really is
+    ending and the model said nothing but a wish, `goodbye()` supplies a proper goodbye instead."""
+    said_anything = False
+    bare_wish = False
+    for sentence in sentences:
+        trimmed = _STRAY_WISH.sub("", sentence).strip()
+        if trimmed != sentence.strip():
+            if not trimmed:
+                bare_wish = True
+                continue
+            if not allow:
+                sentence = trimmed if trimmed[-1] in ".!?," else trimmed + "."
+        said_anything = True
+        yield sentence
+    if bare_wish and not said_anything and allow:
+        yield (goodbye() if goodbye else None) or "Take care."
 
 
 def _reaction_to(text: str) -> bool:
@@ -307,6 +344,9 @@ class PoojaSession:
         self.stop_event = threading.Event()  # set by the web UI's Stop button
         self._covered_steps: set[str] = set()
         self._lead_in_due = False
+        self._noise_as_ack = False
+        self._reintro_count = 0
+        self._last_reaction = ""
         self._last_owner_text = ""
         self.gender = GenderTracker()
         self.honorific: str | None = None  # "Sir" / "Ma'am" once the owner's voice or words show which
@@ -432,14 +472,21 @@ class PoojaSession:
                 return self._addr(step["text"])
         return None
 
-    def _mark_steps_covered(self, text: str) -> None:
+    def _mark_steps_covered(self, text: str, scripted: bool = True) -> None:
+        """Remembers which script steps have been said. A free-form answer to a question only
+        counts for the interest question; the other steps are still delivered in full afterwards,
+        so the approved script is never skipped just because an answer touched on it."""
         for step in SCRIPT_STEPS:
+            if not scripted and step["id"] != "ask_interest":
+                continue
             if step["id"] not in self._covered_steps and re.search(step["covered"], text, re.IGNORECASE):
                 self._covered_steps.add(step["id"])
 
     def _addr(self, text: str) -> str:
         """Uses the right form of address in fixed lines: "Sir" / "Ma'am" once the owner's
-        voice or words show which, and no honorific at all until then (a wrong guess is worse)."""
+        voice or words show which, and no honorific at all until then (a wrong guess is worse).
+        Also keeps Pooja's own verbs feminine ("batati hoon", never "batata hoon")."""
+        text = _feminize(text)
         if self.honorific == "Ma'am":
             return re.sub(r"\b(Sir|Madam|Mam|Ma'am)\b", "Ma'am", text, flags=re.IGNORECASE)
         if self.honorific is None:
@@ -466,7 +513,7 @@ class PoojaSession:
 
     def _fixed_texts_to_prewarm(self) -> list[str]:
         script = [self._addr(step["text"]) for step in SCRIPT_STEPS]
-        script += [self._addr(FINAL_STEP_TEXT.format(app_url=AGENT_CONFIG["app_url"]) + " Dhanyavaad Sir, take care!")]
+        script += [self._addr(FINAL_STEP_TEXT.format(app_url=AGENT_CONFIG["app_url"]) + f" Dhanyavaad Sir! {day_wish().capitalize()}")]
         script += [self._line(k) for k in ("reintro", "closing_not_interested", "closing_busy_or_declined")]
         script += LEAD_INS + REACTIONS
         return script + [self._line("closing_goodnight"), self._line("closing_no_response"), CANNED_REPROMPT] + UNCLEAR_PHRASES + SILENCE_PHRASES + [self._addr(r) for r in HOLD_ON_REPLIES]
@@ -534,11 +581,11 @@ class PoojaSession:
             if decision:
                 self.cm.apply_tool_call("update_state", {"slot": "interest_decision", "value": decision})
 
-    def _apply_reply(self, text: str, tags: list[str]) -> None:
+    def _apply_reply(self, text: str, tags: list[str], scripted: bool = True) -> None:
         """Updates call state from what Pooja just said and any end markers."""
         state = self.cm.get_state()
         effects = reply_effects(text, AGENT_CONFIG["app_url"])
-        self._mark_steps_covered(text)
+        self._mark_steps_covered(text, scripted)
         for slot in effects["slots"]:
             self.cm.apply_tool_call("update_state", {"slot": slot, "value": "yes"})
         if effects["slots"] and not state.get_slot("permission_granted").is_filled():
@@ -550,7 +597,8 @@ class PoojaSession:
             # normal reply, so the conversation is continuing.
             logger.warning(f"Ignoring end marker(s) {tags}: the reply ended with a question.")
             tags = []
-        if tags and not owner_signalled_end(self._last_owner_text) and not self._awaiting_interest:
+        said_yes_to_interest = self._awaiting_interest and classify_reply(self._last_owner_text) == "yes"
+        if tags and not owner_signalled_end(self._last_owner_text) and not said_yes_to_interest:
             logger.warning(f"Ignoring end marker(s) {tags}: nothing the owner said asked to end the call.")
             tags = []
         for tag in tags:
@@ -565,6 +613,19 @@ class PoojaSession:
             "interested" in text.lower() and not state.get_slot("interest_decision").is_filled()
         )
 
+    def _confused_by_opening(self, text: str) -> bool:
+        """A short "kya bol rahi ho?" / "kaun?" right after the opening: they did not catch it,
+        so say who is calling and why once more (only once; after that the LLM handles it)."""
+        if self._reintro_count >= 1:
+            return False
+        toks = re.findall(r"[a-z']+", text.lower())
+        words = set(toks)
+        return 0 < len(toks) <= 8 and bool(
+            {"kaun", "who", "sunai"} & words
+            or ("kya" in words and "bol" in words)
+            or ("samajh" in words and "nahi" in words)
+        )
+
     def _scripted_reply(self, user_text: str) -> str | None:
         """The approved script, said by the code (not the LLM) whenever the
         owner just acknowledges: exact wording, in order, instant, and no
@@ -577,32 +638,48 @@ class PoojaSession:
             if state.interested_confirmed:
                 state.link_sent = True
                 return self._addr(
-                    FINAL_STEP_TEXT.format(app_url=AGENT_CONFIG["app_url"]) + " Dhanyavaad Sir, take care!"
+                    FINAL_STEP_TEXT.format(app_url=AGENT_CONFIG["app_url"]) + f" Dhanyavaad Sir! {day_wish().capitalize()}"
                 )
             if state.not_interested:
                 return self._line("closing_not_interested")
             return self._line("closing_busy_or_declined")
 
         permission = state.get_slot("permission_granted").is_filled()
-        if not permission and is_greeting_only(user_text):
-            return self._line("reintro")  # they just said "Hello?": repeat who is calling
+        if not permission and (is_greeting_only(user_text) or self._confused_by_opening(user_text)):
+            self._reintro_count += 1
+            return self._line("reintro")  # "Hello?" / "kaun bol rahi ho?": say again who is calling and why
 
         if classify_reply(user_text) != "yes" or "interested" in user_text.lower():
             return None
         step = self._next_script_step()
+        if step is None and permission and not state.get_slot("interest_decision").is_filled() and not state.call_ended:
+            # The whole pitch is done and they have not yet said yes or no to the interest question
+            # (a side question came in between): ask it again plainly rather than improvising.
+            self._awaiting_interest = True
+            return self._addr("Toh Sir, kya aap humare app ko use karne mein interested hain?")
         if step is None or self._awaiting_interest:
             return None
         reaction = _reaction_to(user_text)
         if reaction:
             # They reacted to what they just heard ("Wow", "Bahut achha"): respond to it like a person would.
             self._lead_in_due = False
-            step = f"{random.choice(REACTIONS)} {step}"
+            options = [r for r in REACTIONS if r != self._last_reaction] or REACTIONS
+            self._last_reaction = random.choice(options)
+            step = f"{self._last_reaction} {step}"
         elif self._lead_in_due:
             self._lead_in_due = False
         elif random.random() < 0.3:
             self._lead_in_due = True  # next step goes without one, so it never becomes a tic
             step = f"{random.choice(LEAD_INS)} {step}"
         return step
+
+    def _goodbye_for(self, tags: list[str]) -> str | None:
+        """A proper spoken goodbye for the end marker the model attached, if any."""
+        if "NOT_INTERESTED" in tags:
+            return self._line("closing_not_interested")
+        if "CALLBACK" in tags:
+            return self._line("closing_busy_or_declined")
+        return None
 
     def _converse(self, user_text: str, retry: bool = False) -> None:
         """One owner turn. Plain acknowledgements get the next script step
@@ -622,7 +699,9 @@ class PoojaSession:
             spoken = (self._addr(s) for s in stream_sentences([forced], tags, first_clause=False))
         else:
             self.status("thinking")
-            spoken = (self._addr(s) for s in stream_sentences(self._stream_deltas(), tags))
+            allow_wish = owner_signalled_end(user_text) or self._awaiting_interest
+            spoken = (self._addr(s) for s in _drop_stray_wish(
+                stream_sentences(self._stream_deltas(), tags), allow_wish, lambda: self._goodbye_for(tags)))
         text, interrupted = self._deliver(spoken)
         text = text.strip()
 
@@ -654,7 +733,13 @@ class PoojaSession:
             self.cm.state.was_interrupted_last_turn = interrupted
             if interrupted:
                 logger.info("[Barge-in] Owner started speaking — Pooja's turn was cut short.")
-        self._apply_reply(text, tags)
+        self._apply_reply(text, tags, scripted=bool(forced))
+
+        state = self.cm.get_state()
+        if state.call_ended and state.interested_confirmed and not state.link_sent:
+            # The call is ending on a yes: whatever the model said, the owner always hears the link line.
+            state.link_sent = True
+            self._speak(FINAL_STEP_TEXT.format(app_url=AGENT_CONFIG["app_url"]) + f" Dhanyavaad Sir! {day_wish().capitalize()}", force=True)
 
     def run(self) -> ConversationManager:
         self._refresh_dynamic_block()
@@ -733,11 +818,23 @@ class PoojaSession:
                 continue
 
             if self.conversational and looks_like_noise(user_text):
-                # Speech-recognition noise ("of", "Include the"): ask again rather than react to it.
-                logger.info(f"Ignoring likely noise transcript {user_text!r}.")
-                self._speak(UNCLEAR_PHRASES[self._unclear_count % len(UNCLEAR_PHRASES)], force=True)
-                self._unclear_count += 1
-                continue
+                state = self.cm.get_state()
+                mid_pitch = state.get_slot("permission_granted").is_filled() and not self._awaiting_interest
+                if mid_pitch and not self._noise_as_ack:
+                    # A one- or two-word sound we can't place, right after Pooja made a point, is most
+                    # likely a reaction ("hmm", "vaah"), not a question. Carry on like a person would.
+                    logger.info(f"Treating unrecognised short reply {user_text!r} as an acknowledgement.")
+                    self._noise_as_ack = True
+                    user_text = "haan ji"
+                else:
+                    # Speech-recognition noise ("of", "Include the"): a light "go on", not "please repeat".
+                    logger.info(f"Ignoring likely noise transcript {user_text!r}.")
+                    self._noise_as_ack = False
+                    self._speak(UNCLEAR_PHRASES[self._unclear_count % len(UNCLEAR_PHRASES)], force=True)
+                    self._unclear_count += 1
+                    continue
+            else:
+                self._noise_as_ack = False
 
             if self.conversational:
                 try:

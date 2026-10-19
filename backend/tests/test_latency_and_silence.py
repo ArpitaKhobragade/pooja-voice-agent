@@ -172,7 +172,7 @@ class TestSilenceHandling(unittest.TestCase):
 
     def test_unclear_audio_asks_to_repeat(self):
         _, out, _ = self._run("unclear")
-        self.assertTrue(any("clear" in t or "bata dijiye" in t or "dobara" in t for t in out[1:]))
+        self.assertTrue(any("boliye" in t or "keh rahe" in t or "kat gayi" in t for t in out[1:]))
 
     def test_call_ends_politely_after_repeated_silence(self):
         cm, out, getter = self._run("silence")

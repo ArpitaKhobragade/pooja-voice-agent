@@ -51,7 +51,9 @@ class WebCall:
         tts_factory=None,
         vad_factory=None,
         stt=None,
+        timezone: str | None = None,
     ):
+        self.timezone = timezone  # the caller's own timezone (from the browser): greeting and closing wish follow it
         self.emit_json = emit_json
         self.emit_bytes = emit_bytes
         self.max_call_s = max_call_s
@@ -103,12 +105,16 @@ class WebCall:
     def _run(self) -> None:
         reason, outcome = "completed", "none"
         try:
+            from agent_config import set_call_timezone
+
+            set_call_timezone(self.timezone)  # this thread's clock: the caller's, not the server's
             missing = missing_config()
             if missing and self._llm_factory is None:
                 self.emit_json({"type": "error", "message": "The server is missing settings: " + ", ".join(missing)})
                 reason = "error"
                 return
             self._build_and_run()
+            self._let_speech_finish()
             reason = self._stop_reason or "completed"
             outcome = self._outcome()
         except Exception as e:  # noqa: BLE001 - reported to the page, never crashes the server
@@ -121,6 +127,22 @@ class WebCall:
             self.emit_json({"type": "ended", "reason": reason, "outcome": outcome, "seconds": self._elapsed()})
             if self.on_finished:
                 self.on_finished()
+
+    def _let_speech_finish(self) -> None:
+        """When Pooja ends the call herself (her goodbye is the last thing said), keep the
+        connection open until the browser has played it, so the last line is never cut off."""
+        if self._stop_reason or self.duplex is None:
+            return
+        deadline = time.time() + 20.0
+        while time.time() < deadline and not self.duplex.closed:
+            wait = self.duplex.buffered_seconds()
+            if wait <= 0:
+                break
+            time.sleep(min(wait, 0.5))
+        if not self.duplex.closed:
+            time.sleep(self.TAIL_S)
+
+    TAIL_S = 0.8  # network and browser buffering allowance after the last sample is sent
 
     @staticmethod
     def _friendly(e: Exception) -> str:

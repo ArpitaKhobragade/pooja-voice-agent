@@ -298,7 +298,7 @@ class TestWebCall(unittest.TestCase):
 class FakeWebCall:
     instances = []
 
-    def __init__(self, emit_json, emit_bytes, max_call_s=0, on_finished=None):
+    def __init__(self, emit_json, emit_bytes, max_call_s=0, on_finished=None, timezone=None):
         self.emit_json, self.emit_bytes, self.on_finished = emit_json, emit_bytes, on_finished
         self.mic, self.stopped = [], None
         FakeWebCall.instances.append(self)

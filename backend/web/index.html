@@ -456,7 +456,7 @@
 
     ws = new WebSocket(wsUrl());
     ws.binaryType = "arraybuffer";
-    ws.onopen = () => ws.send(JSON.stringify({ type: "start" }));
+    ws.onopen = () => ws.send(JSON.stringify({ type: "start", tz: (Intl.DateTimeFormat().resolvedOptions().timeZone || "") }));
     ws.onmessage = (ev) => (typeof ev.data === "string" ? onEvent(JSON.parse(ev.data)) : playChunk(ev.data));
     ws.onerror = () => { if (phase !== "idle") showBanner("Could not reach the server. Check your connection and try again."); };
     ws.onclose = () => {
@@ -499,13 +499,17 @@
     const bits = ["Call ended" + (m.seconds ? ` after ${mmss(m.seconds)}` : "")];
     if (REASON[m.reason]) bits.push(REASON[m.reason]);
     if (outcome) bits.push(outcome);
-    finish(bits.join(". "), kind);
+    finish(bits.join(". "), kind, m.reason === "completed");
   }
 
-  function finish(message, kind) {
+  function finish(message, kind, drain) {
     if (phase === "idle") return;
     addNote(message, kind);
-    resetToIdle("idle", "Call ended. Start a new call any time.");
+    const done = () => resetToIdle("idle", "Call ended. Start a new call any time.");
+    // Pooja ended the call herself: let her last line finish playing before closing the audio.
+    const wait = drain && ctx ? Math.max(0, playhead - ctx.currentTime) : 0;
+    if (wait > 0.05) { phase = "ending"; render(); setStatus("speaking", "Pooja is finishing"); setTimeout(done, wait * 1000 + 500); }
+    else done();
   }
 
   function endCall() {

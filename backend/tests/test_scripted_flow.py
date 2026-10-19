@@ -131,7 +131,7 @@ class TestConversationalFlow(unittest.TestCase):
 
     def test_opening_is_the_scripted_line_and_a_question_goes_to_the_llm(self):
         llm = FakeStreamLLM(["Main Pooja hoon, HostelPGDekho se."])
-        session, cm, out = _run(llm, ["aap kaun bol rahe ho?"])
+        session, cm, out = _run(llm, ["mera PG bada hai, aap kya offer karti ho?"])
         self.assertIn("My name is Pooja", out[0])
         self.assertEqual(llm.calls, 1)
         self.assertEqual(out[1], "Main Pooja hoon, HostelPGDekho se.")
@@ -145,7 +145,7 @@ class TestConversationalFlow(unittest.TestCase):
 
     def test_first_turn_tells_llm_not_to_greet_again(self):
         llm = FakeStreamLLM(["Ji, batao."])
-        session, cm, out = _run(llm, ["kaun bol raha hai?"])
+        session, cm, out = _run(llm, ["mera PG bada hai, aap kya offer karti ho?"])
         self.assertIn("Do not greet", llm.last_messages[1]["content"])
 
     def test_llm_is_told_to_answer_only_and_not_recite_the_script(self):
@@ -184,7 +184,7 @@ class TestConversationalFlow(unittest.TestCase):
 
     def test_empty_llm_reply_is_not_silent(self):
         session, cm, out = _run(FakeStreamLLM([""]), ["mera PG full hai"])
-        self.assertTrue(any("samajh nahi payi" in t for t in out))
+        self.assertTrue(any("aap bataiye" in t for t in out))
 
     def test_good_night_is_mirrored_without_calling_the_llm(self):
         llm = FakeStreamLLM([])
@@ -244,7 +244,7 @@ class TestConversationalFlow(unittest.TestCase):
             deliver_stream=lambda sentences: ("", True),  # owner talked over her before any audio
         )
         session.run()
-        self.assertFalse(any("samajh nahi payi" in t for t in out))
+        self.assertFalse(any("aap bataiye" in t for t in out))
 
     def test_no_back_to_back_questions(self):
         llm = FakeStreamLLM(["Kya aap sunna chahenge?", "Achha Sir, samajh gayi."])

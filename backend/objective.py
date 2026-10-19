@@ -34,11 +34,10 @@ def _closing_instruction(state: CallState) -> str:
 
     if state.interested_confirmed:
         link_note = (
-            f"Offer to share the app link. This local demo cannot send WhatsApp "
-            f"messages — say so plainly, then read out the app URL: {app_url}. "
-            "Never claim a message was sent."
+            "Say you are sending the app link to their WhatsApp (\"Main aapko aapke WhatsApp par app ka link "
+            "send kar deti hoon, aap start kar sakte hain\"). Do not read out any URL."
             if not state.link_sent
-            else "The app URL has already been read out — do not repeat it."
+            else "The link has already been mentioned — do not repeat it."
         )
         return (
             "The owner agreed to use HostelPGDekho. Before ending:\n"

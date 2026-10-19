@@ -8,6 +8,7 @@ lives here, so this agent could be re-pointed at a different script by
 editing only this file.
 """
 
+import contextvars
 import datetime
 import os
 
@@ -80,9 +81,8 @@ AGENT_CONFIG = {
     # owner asks for the app link, at any point in the call.
     "link_request_instruction": (
         "If the owner asks for the app link or for it to be sent on WhatsApp: "
-        "this is a local demo and cannot actually send WhatsApp messages. Say so "
-        "plainly, do not claim a message was sent, and offer to read out the "
-        "configured app URL instead."
+        "say you will send it to their WhatsApp right after the call. Do not "
+        "read out any URL."
     ),
 
     # Literal approved-script lines. {greeting}, {day_wish} and {app_url} are
@@ -132,8 +132,8 @@ AGENT_CONFIG = {
             "nahi bhej sakti. Lekin main aapko app ka URL bata deti hoon: {app_url}"
         ),
         "closing_interested": (
-            "Bahut bahut dhanyavaad, Sir! Aap {app_url} par jaakar start kar "
-            "sakte hain. {day_wish}"
+            "Bahut bahut dhanyavaad, Sir! Main aapko aapke WhatsApp par app ka link "
+            "send kar deti hoon, aap start kar sakte hain. {day_wish}"
         ),
         "closing_not_interested": (
             "Koi baat nahi, Sir. Aapka time dene ke liye dhanyavaad. {day_wish}"
@@ -209,10 +209,27 @@ FINAL_STEP_TEXT = (
 )
 
 
+_CALL_TZ: contextvars.ContextVar[str | None] = contextvars.ContextVar("pooja_call_tz", default=None)
+
+
+def set_call_timezone(name: str | None) -> None:
+    """Use the caller's own timezone (the browser reports it) for this call's greeting and
+    closing wish. Ignored when it isn't a real timezone name."""
+    if name:
+        try:
+            from zoneinfo import ZoneInfo
+
+            ZoneInfo(name)
+        except Exception:
+            return
+        _CALL_TZ.set(name)
+
+
 def _now():
-    """Current time in the callers' timezone (default India). A cloud server runs on
-    UTC, which would otherwise make the greeting wrong by 5.5 hours."""
-    name = os.environ.get("POOJA_TIMEZONE", "Asia/Kolkata").strip() or "Asia/Kolkata"
+    """Current time in the caller's timezone: the browser's if it told us, else
+    POOJA_TIMEZONE (default India). A cloud server runs on UTC, which would otherwise
+    make the greeting wrong by 5.5 hours."""
+    name = _CALL_TZ.get() or os.environ.get("POOJA_TIMEZONE", "Asia/Kolkata").strip() or "Asia/Kolkata"
     try:
         from zoneinfo import ZoneInfo
 
@@ -239,11 +256,20 @@ def greeting() -> str:
 
 
 def day_wish() -> str:
-    """Closing wish. Deliberately NOT time-of-day based: Pooja cannot know
-    whether it is day or night where the owner is, so 'din shubh ho' or
-    'shubh ratri' can be wrong. (If the owner themselves says good night,
-    the session mirrors it.)"""
-    return "take care!"
+    """Closing wish that fits the caller's time of day (their own clock, so it is not
+    'have a great day' at night). If the owner says good night themselves, the session
+    mirrors it."""
+    override = os.environ.get("POOJA_DAY_WISH", "").strip()
+    if override:
+        return override
+    hour = _now().hour
+    if 5 <= hour < 12:
+        return "have a great day!"
+    if 12 <= hour < 17:
+        return "have a great afternoon!"
+    if 17 <= hour < 21:
+        return "have a lovely evening!"
+    return "good night, take care!"
 
 
 def script_line(key: str) -> str:
